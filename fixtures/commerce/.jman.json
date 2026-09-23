@@ -1,0 +1,4 @@
+{
+  "offline": true,
+  "generateTasks": [":app:compileJava"]
+}

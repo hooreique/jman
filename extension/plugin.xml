@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin>
+  <extension point="org.eclipse.jdt.ls.core.delegateCommandHandler">
+    <delegateCommandHandler class="dev.jman.Provenance">
+      <command id="jman.resolve"/>
+      <command id="jman.sync"/>
+    </delegateCommandHandler>
+  </extension>
+</plugin>
