@@ -104,6 +104,22 @@ func Position(text string, line, column int, symbol string, occurrence int) (int
 		if len(matches) == 0 {
 			return 0, fmt.Errorf("identifier %q is absent on line %d", symbol, line)
 		}
+		if column > 0 {
+			selected := 0
+			for i, start := range matches {
+				if column >= start && column < start+len(want) {
+					selected = i + 1
+					break
+				}
+			}
+			if selected == 0 {
+				return 0, fmt.Errorf("column %d does not select %q; candidate columns: %v", column, symbol, matches)
+			}
+			if occurrence > 0 && occurrence != selected {
+				return 0, fmt.Errorf("column and occurrence select different tokens")
+			}
+			occurrence = selected
+		}
 		if occurrence == 0 && len(matches) > 1 {
 			return 0, fmt.Errorf("ambiguous identifier %q: columns %v; use --occurrence N or --column", symbol, matches)
 		}

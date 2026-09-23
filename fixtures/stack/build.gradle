@@ -1,0 +1,16 @@
+plugins { id 'java' }
+java { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
+def jars = System.getenv('JMAN_FIXTURE_DEPS')
+if (!jars) throw new GradleException('Run in nix develop: JMAN_FIXTURE_DEPS is required')
+dependencies {
+    implementation fileTree(dir: jars, include: ['*.jar'], exclude: ['*processor*', 'querydsl-apt*', 'ecj-*'])
+    annotationProcessor fileTree(dir: jars, include: ['*.jar'])
+}
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['-Amapstruct.suppressGeneratorTimestamp=true']
+}
+tasks.register('verifyStack', JavaExec) {
+    dependsOn classes
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'example.StackCheck'
+}

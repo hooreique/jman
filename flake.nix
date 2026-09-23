@@ -7,6 +7,11 @@
       pkgs = import nixpkgs { inherit system; };
       jdk = pkgs.jdk21;
       jdtls = pkgs.jdt-language-server;
+      fixtureDeps = import ./nix/java-deps.nix { inherit pkgs; };
+      lombokAgent = pkgs.fetchurl {
+        url = "https://repo.maven.apache.org/maven2/org/projectlombok/lombok/1.18.48/lombok-1.18.48.jar";
+        hash = "sha256-hUd6RlXrssB0qQmc+3Sb5FREn+5WTUKCYQ3xuF98UIs=";
+      };
       extension = pkgs.stdenvNoCC.mkDerivation {
         pname = "jman-jdt-extension";
         version = "0.1.0";
@@ -30,6 +35,8 @@
           cp -r skills gradle $out/share/jman/
           wrapProgram $out/bin/jman \
             --set-default JMAN_JDTLS ${jdtls}/bin/jdtls \
+            --set-default JMAN_JDTLS_HOME ${jdtls}/share/java/jdtls \
+            --set-default JMAN_LOMBOK_AGENT ${lombokAgent} \
             --set-default JMAN_JAVA_HOME ${jdk} \
             --set-default JMAN_EXTENSION ${extension}/share/java/jman-jdt.jar \
             --set-default JMAN_GRADLE_HOME ${pkgs.gradle}/libexec/gradle \
@@ -55,14 +62,36 @@
       devShells.${system}.default = pkgs.mkShell {
         packages = [ pkgs.go jdk pkgs.python3 pkgs.gradle pkgs.git jdtls ];
         JMAN_JDTLS = "${jdtls}/bin/jdtls";
+        JMAN_JDTLS_HOME = "${jdtls}/share/java/jdtls";
+        JMAN_LOMBOK_AGENT = "${lombokAgent}";
         JMAN_JAVA_HOME = "${jdk}";
         JMAN_EXTENSION = "${extension}/share/java/jman-jdt.jar";
         JMAN_GRADLE_HOME = "${pkgs.gradle}/libexec/gradle";
         JMAN_GRADLE = "${pkgs.gradle}/bin/gradle";
         JMAN_GRADLE_MODEL = "${self}/gradle/model.gradle";
+        JMAN_FIXTURE_DEPS = "${fixtureDeps}";
         JAVA_HOME = "${jdk}";
       };
-      checks.${system}.unit = jman;
+      checks.${system} = {
+        unit = jman;
+        benchmark = pkgs.runCommand "jman-benchmark-check" {
+          nativeBuildInputs = [ pkgs.python3 pkgs.git pkgs.bash jdk jman ];
+        } ''
+          export HOME=$TMPDIR/home
+          mkdir -p "$HOME"
+          python3 ${self}/tests/bench_test.py ${jman}/bin/jman
+          touch $out
+        '';
+        integration = pkgs.runCommand "jman-jdtls-integration" {
+          nativeBuildInputs = [ pkgs.python3 pkgs.git pkgs.gradle jdk jman ];
+          JMAN_FIXTURE_DEPS = "${fixtureDeps}";
+        } ''
+          export HOME=$TMPDIR/home
+          mkdir -p "$HOME"
+          python3 ${self}/tests/integration.py ${jman}/bin/jman
+          touch $out
+        '';
+      };
       homeManagerModules.default = { config, lib, ... }: {
         options.services.jman = {
           enable = lib.mkEnableOption "jman Java language service";

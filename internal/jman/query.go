@@ -38,12 +38,14 @@ type provenance struct {
 	BinaryMember            bool   `json:"binaryMember"`
 	HasSourceRange          bool   `json:"hasSourceRange"`
 	AttachedSourceAvailable bool   `json:"attachedSourceAvailable"`
+	GeneratedMember         bool   `json:"generatedMember"`
+	Member                  bool   `json:"member"`
 	Handle                  string `json:"handle"`
 }
 
 func (s *Session) Query(ctx context.Context, q Request) Response {
 	r := reply(q)
-	files, snapshot, build, e := scan(s.root)
+	files, snapshot, build, e := s.scan()
 	if e != nil {
 		return failure(q, "error", "SCAN_FAILED", e, "")
 	}
@@ -55,6 +57,14 @@ func (s *Session) Query(ctx context.Context, q Request) Response {
 		s.model, s.modelError = loadModel(ctx, s.root)
 		s.buildHash = build
 	}
+	modelHash, e := modelSnapshot(s.model)
+	if e != nil {
+		return failure(q, "partial", "ARTIFACT_CHANGED", e, "jman refresh")
+	}
+	if s.artifactHash != "" && s.artifactHash != modelHash {
+		s.stop()
+	}
+	s.artifactHash = modelHash
 	if e = s.start(ctx); e != nil {
 		return failure(q, "not-ready", "START_FAILED", e, "jman doctor --project "+s.root)
 	}
@@ -65,13 +75,20 @@ func (s *Session) Query(ctx context.Context, q Request) Response {
 	case <-s.rpc.Done():
 		return failure(q, "error", "SERVER_EXITED", fmt.Errorf("JDTLS exited"), "jman refresh")
 	}
+	s.mu.Lock()
+	initError := s.initialError
+	s.mu.Unlock()
+	if initError != "" {
+		return failure(q, "not-ready", "IMPORT_FAILED", fmt.Errorf("%s", initError), "jman refresh")
+	}
 	problems, e := s.sync(ctx, files)
 	if e != nil {
 		return failure(q, "not-ready", "SYNC_FAILED", e, "jman doctor")
 	}
-	modelHash, e := modelSnapshot(s.model)
+	// Import can discover additional composite-build roots and generated sources.
+	_, snapshot, _, e = s.scan()
 	if e != nil {
-		return failure(q, "partial", "ARTIFACT_CHANGED", e, "jman refresh")
+		return failure(q, "error", "SCAN_FAILED", e, "")
 	}
 	r.Snapshot = digest([]byte(snapshot + modelHash))
 	r.Context = map[string]any{"root": s.root, "semantics": "compile-time"}
@@ -121,7 +138,9 @@ func (s *Session) Query(ctx context.Context, q Request) Response {
 	}
 	params := map[string]any{"textDocument": map[string]any{"uri": FileURI(q.File)}, "position": point{q.Line - 1, column}}
 	if !p.Resolved {
-		return failure(q, "partial", "UNRESOLVED_BINDING", fmt.Errorf("JDT could not uniquely bind this location"), "jman doctor")
+		r.Status = "partial"
+		r.Error = &Problem{Code: "UNRESOLVED_BINDING", Message: "JDT could not uniquely bind this location", Retryable: len(problems) > 0, NextAction: "jman doctor"}
+		return r
 	}
 	if q.Command == "hover" {
 		var hover any
@@ -213,7 +232,7 @@ func (s *Session) Query(ctx context.Context, q Request) Response {
 			if q.Command == "definition" && p.AttachedSourceAvailable && p.SourceAttachment != "" {
 				if _, e := os.Stat(p.SourceAttachment); e == nil {
 					item.Origin = "dependency-source"
-					item.SourceMatch = "coordinate-only"
+					item.SourceMatch = "unverified"
 				}
 			}
 			if text == "" {
@@ -226,15 +245,24 @@ func (s *Session) Query(ctx context.Context, q Request) Response {
 			}
 		}
 		if q.Command == "definition" {
+			if bc != nil && path != "" {
+				if target := s.model.context(path); target != nil && target.Project == bc.Project && bc.SourceSet == "main" && target.SourceSet == "test" {
+					r.Status = "partial"
+					r.Warnings = append(r.Warnings, "JDT selected test source from a main source-set caller; build model disagrees. Do not rely on this definition.")
+				}
+			}
 			item.Binary = p.Binary
 			if p.Binary != "" {
-				if b, err := os.ReadFile(p.Binary); err == nil {
-					item.BinaryDigest = digest(b)
+				if hash, err := fileDigest(p.Binary); err == nil {
+					item.BinaryDigest = hash
 				}
 				if bc != nil {
 					for _, a := range bc.Artifacts {
 						if samePath(a.Path, p.Binary) {
 							item.Artifact = a.Component
+							if a.ModuleComponent && item.Origin == "dependency-source" && filepath.Base(p.SourceAttachment) == strings.TrimSuffix(filepath.Base(p.Binary), ".jar")+"-sources.jar" {
+								item.SourceMatch = "coordinate-only"
+							}
 							break
 						}
 					}
@@ -244,7 +272,7 @@ func (s *Session) Query(ctx context.Context, q Request) Response {
 					r.Warnings = append(r.Warnings, "JDT binary is not in the exported Gradle context; run refresh and inspect deps.")
 				}
 			}
-			if !p.BinaryMember && !p.HasSourceRange {
+			if p.GeneratedMember || p.Member && !p.BinaryMember && !p.HasSourceRange {
 				item.Origin = "generated-source"
 				r.Warnings = append(r.Warnings, "Generated member: location may identify its owning source rather than a generated method body.")
 			}
@@ -276,7 +304,7 @@ func (s *Session) Query(ctx context.Context, q Request) Response {
 	return s.finish(q, r, snapshot, modelHash)
 }
 func (s *Session) finish(q Request, r Response, before, modelBefore string) Response {
-	_, after, _, e := scan(s.root)
+	_, after, _, e := s.scan()
 	modelAfter, me := modelSnapshot(s.model)
 	if e != nil || me != nil || before != after || modelBefore != modelAfter {
 		r.Status = "partial"

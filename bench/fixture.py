@@ -10,6 +10,13 @@ import zipfile
 SOURCE = Path(__file__).resolve().parent.parent / "fixtures"
 
 
+def writable_tree(root):
+    root.chmod(0o755)
+    for path in root.rglob("*"):
+        if not path.is_symlink():
+            path.chmod(0o755 if path.is_dir() else 0o644)
+
+
 def run(args, cwd=None, **kwargs):
     return subprocess.run(args, cwd=cwd, check=True, text=True, capture_output=True, **kwargs)
 
@@ -17,7 +24,8 @@ def run(args, cwd=None, **kwargs):
 def git_init(root):
     run(["git", "init", "-q", "-b", "main"], root)
     run(["git", "add", "."], root)
-    run(["git", "-c", "user.name=jman fixture", "-c", "user.email=fixture@localhost", "commit", "-qm", "fixture baseline"], root)
+    run(["git", "-c", "user.name=jman fixture", "-c", "user.email=fixture@localhost", "commit", "-qm", "fixture baseline"], root,
+        env=dict(os.environ, GIT_AUTHOR_DATE="2020-01-01T00:00:00Z", GIT_COMMITTER_DATE="2020-01-01T00:00:00Z"))
 
 
 def materialize(destination):
@@ -29,6 +37,8 @@ def materialize(destination):
     library = root / "internal-text"
     shutil.copytree(SOURCE / "commerce", commerce)
     shutil.copytree(SOURCE / "internal-text", library)
+    writable_tree(commerce)
+    writable_tree(library)
     classes = root / "artifact-build"
     classes.mkdir()
     source = library / "src/main/java/com/acme/text/TextUtil.java"
@@ -44,9 +54,9 @@ def materialize(destination):
         jar.writestr(zipfile.ZipInfo("com/acme/text/TextUtil.java", (2020, 1, 1, 0, 0, 0)), source.read_bytes())
     (artifact / "shared-text-2.4.1.pom").write_text('''<project><modelVersion>4.0.0</modelVersion><groupId>com.acme</groupId><artifactId>shared-text</artifactId><version>2.4.1</version></project>''')
     shutil.rmtree(classes)
-    (commerce / ".gitignore").write_text(".gradle/\n**/build/\n")
+    (commerce / ".gitignore").write_text(".gradle/\n**/build/\n**/bin/\n**/.project\n**/.classpath\n**/.factorypath\n**/.settings/\n")
     (library / "settings.gradle").write_text("rootProject.name = 'shared-text'\n")
-    (library / "build.gradle").write_text("plugins { id 'java-library' }; group='com.acme'; version='2.4.1'\n")
+    (library / "build.gradle").write_text("plugins { id 'java-library' }; group='com.acme'; version='2.4.1'\njava { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }\n")
     git_init(commerce)
     git_init(library)
     return {"root": str(root), "project": str(commerce), "binary": str(binary),

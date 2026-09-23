@@ -23,6 +23,10 @@ func TestUnicodeAndAmbiguity(t *testing.T) {
 	if e != nil || got != 17 {
 		t.Fatalf("second token %d %v", got, e)
 	}
+	got, e = Position(text, 2, 18, "f", 0)
+	if e != nil || got != 17 {
+		t.Fatalf("column disambiguation %d %v", got, e)
+	}
 	if _, e = Position("foo foobar", 1, 0, "foo", 0); e != nil {
 		t.Fatal(e)
 	}

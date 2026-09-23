@@ -20,6 +20,7 @@ type manager struct {
 	mu       sync.Mutex
 	sessions map[string]*Session
 	max      int
+	queue    chan struct{}
 }
 
 func (m *manager) acquire(ctx context.Context, root string) (*Session, error) {
@@ -83,8 +84,23 @@ func (m *manager) serve(w http.ResponseWriter, req *http.Request) {
 	}
 	ctx, cancel := context.WithDeadline(req.Context(), q.Deadline)
 	defer cancel()
+	if q.Command != "status" && q.Command != "stop" {
+		select {
+		case m.queue <- struct{}{}:
+			defer func() { <-m.queue }()
+		default:
+			_ = json.NewEncoder(w).Encode(failure(q, "not-ready", "QUEUE_FULL", fmt.Errorf("daemon queue is full"), "retry later"))
+			return
+		}
+	}
 	var response Response
-	if q.Command == "status" {
+	if q.Command == "stop" {
+		response = reply(q)
+		response.Results = append(response.Results, Result{Name: "daemon stopping"})
+		defer func() {
+			go func() { time.Sleep(100 * time.Millisecond); _ = syscall.Kill(os.Getpid(), syscall.SIGTERM) }()
+		}()
+	} else if q.Command == "status" {
 		response = reply(q)
 		m.mu.Lock()
 		for _, s := range m.sessions {
@@ -135,7 +151,7 @@ func RunDaemon(maxSessions int) error {
 	if e = os.Chmod(socket, 0600); e != nil {
 		return e
 	}
-	m := &manager{sessions: map[string]*Session{}, max: maxSessions}
+	m := &manager{sessions: map[string]*Session{}, max: maxSessions, queue: make(chan struct{}, 64)}
 	server := &http.Server{Handler: http.HandlerFunc(m.serve), ReadHeaderTimeout: 5 * time.Second}
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
@@ -194,6 +210,9 @@ func Client(ctx context.Context, q Request) (Response, error) {
 		return nil
 	}
 	if e := ping(); e != nil {
+		if q.Command == "status" || q.Command == "stop" {
+			return reply(q), nil
+		}
 		if e = os.MkdirAll(filepath.Dir(socket), 0700); e != nil {
 			return Response{}, e
 		}

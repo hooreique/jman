@@ -9,6 +9,7 @@ import org.eclipse.jdt.core.search.*;
 import org.eclipse.jdt.ls.core.internal.IDelegateCommandHandler;
 import org.eclipse.jdt.ls.core.internal.JDTUtils;
 import org.eclipse.jdt.ls.core.internal.JobHelpers;
+import org.eclipse.jdt.ls.core.internal.ProjectUtils;
 import org.eclipse.jdt.ls.core.internal.handlers.BaseDocumentLifeCycleHandler;
 
 /** Extracts identity from JDT's selected element, never from a name search. */
@@ -33,7 +34,12 @@ public final class Provenance implements IDelegateCommandHandler {
                         "path", marker.getResource().getFullPath().toString()));
                 }
             }
-            return Map.of("problems", problems);
+            List<String> roots = new ArrayList<>();
+            for (IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
+                IPath path = ProjectUtils.getProjectRealFolder(project);
+                if (path != null && !path.toString().contains("/.metadata/") && !project.getName().equals("jdt.ls-java-project")) roots.add(path.toOSString());
+            }
+            return Map.of("problems", problems, "projectRoots", roots);
         }
         String uri = (String) args.get(0);
         int line = ((Number) args.get(1)).intValue();
@@ -73,12 +79,21 @@ public final class Provenance implements IDelegateCommandHandler {
             if (attachment != null) result.put("sourceAttachment", attachment.toOSString());
         }
         if (element instanceof IMember member) {
+            result.put("member", true);
             result.put("binaryMember", member.isBinary());
             IType type = member instanceof IType t ? t : member.getDeclaringType();
             if (type != null) result.put("declaringType", type.getFullyQualifiedName());
             ISourceRange range = member.getSourceRange();
             result.put("hasSourceRange", range != null && range.getOffset() >= 0 && range.getLength() > 0);
             if (member.getClassFile() != null) result.put("attachedSourceAvailable", member.getClassFile().getSource() != null);
+            if (!member.isBinary() && member instanceof IMethod && member.getCompilationUnit() != null) {
+                ISourceRange nameRange = member.getNameRange();
+                String ownerSource = member.getCompilationUnit().getBuffer().getContents();
+                boolean namedInSource = nameRange != null && nameRange.getOffset() >= 0
+                    && nameRange.getOffset() + nameRange.getLength() <= ownerSource.length()
+                    && ownerSource.substring(nameRange.getOffset(), nameRange.getOffset() + nameRange.getLength()).equals(member.getElementName());
+                result.put("generatedMember", !namedInSource);
+            }
         }
         return result;
     }

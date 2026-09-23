@@ -29,6 +29,7 @@ Commands:
   prepare          Import and warm the current build (--generate runs configured tasks)
   refresh          Reimport after build/dependency changes
   status           List active workspace sessions
+  stop             Stop the daemon and its JDTLS processes
   doctor           Diagnose build/classpath/processor problems
   skill install    Install the bundled skill (--target DIRECTORY)
   daemon           Run the user service (--max-sessions N)
@@ -136,7 +137,7 @@ func run(args []string) int {
 	if command == "read" {
 		return readSource(q.File, *lines, q.MaxBytes, *jsonOut)
 	}
-	allowed := map[string]bool{"definition": true, "references": true, "implementations": true, "hover": true, "prepare": true, "refresh": true, "status": true, "doctor": true, "deps": true}
+	allowed := map[string]bool{"definition": true, "references": true, "implementations": true, "hover": true, "prepare": true, "refresh": true, "status": true, "stop": true, "doctor": true, "deps": true}
 	if !allowed[command] {
 		return fail(fmt.Errorf("unknown command %q; use jman --help", command))
 	}
@@ -147,7 +148,7 @@ func run(args []string) int {
 			return fail(e)
 		}
 	}
-	if command != "status" {
+	if command != "status" && command != "stop" {
 		if q.Project == "" {
 			path := q.File
 			if path == "" {

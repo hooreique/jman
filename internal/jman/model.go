@@ -12,10 +12,12 @@ import (
 )
 
 type Artifact struct {
-	Path       string            `json:"path"`
-	Component  string            `json:"component"`
-	Variant    string            `json:"variant"`
-	Attributes map[string]string `json:"attributes"`
+	Path             string            `json:"path"`
+	Component        string            `json:"component"`
+	Variant          string            `json:"variant"`
+	Attributes       map[string]string `json:"attributes"`
+	ProjectComponent bool              `json:"projectComponent"`
+	ModuleComponent  bool              `json:"moduleComponent"`
 }
 type BuildContext struct {
 	Project       string     `json:"project"`
@@ -34,6 +36,13 @@ func gradleCommand(ctx context.Context, root string, args ...string) *exec.Cmd {
 		name = "gradle"
 		if executable := os.Getenv("JMAN_GRADLE"); executable != "" {
 			name = executable
+		}
+		var config Config
+		if b, e := os.ReadFile(filepath.Join(root, ".jman.json")); e == nil && json.Unmarshal(b, &config) == nil && config.GradleHome != "" {
+			name = filepath.Join(config.GradleHome, "bin", "gradle")
+			if _, e := os.Stat(name); e != nil {
+				name = filepath.Join(config.GradleHome, "bin", "gradlew")
+			}
 		}
 	}
 	cmd := exec.CommandContext(ctx, name, args...)
@@ -127,6 +136,11 @@ func modelSnapshot(model *BuildModel) (string, error) {
 	seen := map[string]bool{}
 	for _, c := range model.Contexts {
 		for _, a := range c.Artifacts {
+			// Project dependencies are bound to imported source; their not-yet-built
+			// output JARs are not a prerequisite for navigation.
+			if a.ProjectComponent {
+				continue
+			}
 			if seen[a.Path] {
 				continue
 			}
@@ -138,11 +152,11 @@ func modelSnapshot(model *BuildModel) (string, error) {
 			if info.IsDir() {
 				continue
 			}
-			b, e := os.ReadFile(a.Path)
+			hash, e := fileDigest(a.Path)
 			if e != nil {
 				return "", e
 			}
-			inputs.WriteString(digest(b))
+			inputs.WriteString(hash)
 		}
 	}
 	return digest([]byte(inputs.String())), nil

@@ -114,7 +114,8 @@ func readMessage(r *bufio.Reader) (Message, error) {
 	if _, e := io.ReadFull(r, b); e != nil {
 		return m, e
 	}
-	return m, json.Unmarshal(b, &m)
+	e := json.Unmarshal(b, &m)
+	return m, e
 }
 func (c *Client) read(r io.Reader) {
 	reader := bufio.NewReader(r)

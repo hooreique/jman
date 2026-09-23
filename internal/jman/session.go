@@ -26,25 +26,30 @@ type Config struct {
 	Settings       map[string]any `json:"settings"`
 }
 type Session struct {
-	root        string
-	gate        chan struct{}
-	rpc         *lsp.Client
-	cmd         *exec.Cmd
-	processDone chan struct{}
-	mu          sync.Mutex
-	state       string
-	message     string
-	ready       chan struct{}
-	readyOnce   sync.Once
-	documents   map[string]string
-	versions    map[string]int
-	files       map[string]string
-	buildHash   string
-	model       *BuildModel
-	modelError  error
-	config      Config
-	settings    map[string]any
-	lastUsed    time.Time
+	root         string
+	gate         chan struct{}
+	rpc          *lsp.Client
+	cmd          *exec.Cmd
+	processDone  chan struct{}
+	mu           sync.Mutex
+	state        string
+	message      string
+	initialError string
+	ready        chan struct{}
+	readyOnce    sync.Once
+	documents    map[string]string
+	versions     map[string]int
+	files        map[string]string
+	extraRoots   []string
+	buildHash    string
+	artifactHash string
+	model        *BuildModel
+	modelError   error
+	config       Config
+	settings     map[string]any
+	lastUsed     time.Time
+	failures     int
+	nextStart    time.Time
 }
 
 func newSession(root string) *Session {
@@ -80,6 +85,9 @@ func (s *Session) handler(method string, params json.RawMessage) (any, error) {
 			s.setState("indexing", p.Message)
 			s.readyOnce.Do(func() { close(s.ready) })
 		} else if p.Type == "Error" {
+			s.mu.Lock()
+			s.initialError = p.Message
+			s.mu.Unlock()
 			s.setState("degraded", p.Message)
 			s.readyOnce.Do(func() { close(s.ready) })
 		} else {
@@ -115,9 +123,13 @@ func (s *Session) start(ctx context.Context) error {
 		select {
 		case <-s.rpc.Done():
 			s.stop()
+			s.failedStart("JDTLS exited unexpectedly")
 		default:
 			return nil
 		}
+	}
+	if time.Now().Before(s.nextStart) {
+		return fmt.Errorf("JDTLS restart backoff until %s", s.nextStart.Format(time.RFC3339))
 	}
 	data, e := os.ReadFile(filepath.Join(s.root, ".jman.json"))
 	if e == nil {
@@ -137,7 +149,10 @@ func (s *Session) start(ctx context.Context) error {
 	}
 	gradleJava := s.config.GradleJavaHome
 	if gradleJava == "" {
-		gradleJava = javaHome
+		gradleJava = os.Getenv("JAVA_HOME")
+		if gradleJava == "" {
+			gradleJava = os.Getenv("JMAN_JAVA_HOME")
+		}
 	}
 	s.settings = map[string]any{"java": map[string]any{
 		"home": javaHome, "autobuild": map[string]any{"enabled": true},
@@ -151,7 +166,7 @@ func (s *Session) start(ctx context.Context) error {
 	if launcher == "" {
 		launcher = "jdtls"
 	}
-	identity := digest([]byte(s.root + "\x00" + launcher + "\x00" + os.Getenv("JMAN_EXTENSION") + "\x00" + javaHome))[:24]
+	identity := digest([]byte(s.root + "\x00" + launcher + "\x00" + os.Getenv("JMAN_EXTENSION") + "\x00" + os.Getenv("JMAN_LOMBOK_AGENT") + "\x00" + javaHome + "\x00" + s.buildHash + "\x00" + s.artifactHash))[:24]
 	dir := filepath.Join(CacheDir(), "workspaces", identity)
 	if e = os.MkdirAll(dir, 0700); e != nil {
 		return e
@@ -161,7 +176,26 @@ func (s *Session) start(ctx context.Context) error {
 		return e
 	}
 	cmd := exec.Command(launcher, "-data", filepath.Join(dir, "data"), "-configuration", filepath.Join(dir, "config"), "--jvm-arg=-Xms128m", "--jvm-arg=-Xmx1536m")
+	if home := os.Getenv("JMAN_JDTLS_HOME"); home != "" {
+		jars, err := filepath.Glob(filepath.Join(home, "plugins", "org.eclipse.equinox.launcher_*.jar"))
+		if err != nil || len(jars) != 1 {
+			log.Close()
+			return fmt.Errorf("expected one Equinox launcher under %s", home)
+		}
+		cmd = exec.Command(filepath.Join(javaHome, "bin", "java"),
+			"-Declipse.application=org.eclipse.jdt.ls.core.id1", "-Dosgi.bundles.defaultStartLevel=4", "-Declipse.product=org.eclipse.jdt.ls.core.product",
+			"-Dosgi.sharedConfiguration.area="+filepath.Join(home, "config_linux"), "-Dosgi.sharedConfiguration.area.readOnly=true", "-Dosgi.configuration.cascaded=true",
+			"-Xms128m", "-Xmx1536m", "--add-modules=ALL-SYSTEM", "--add-opens", "java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+			"-jar", jars[0], "-data", filepath.Join(dir, "data"), "-configuration", filepath.Join(dir, "config"))
+	}
 	cmd.Dir = s.root
+	if agent := os.Getenv("JMAN_LOMBOK_AGENT"); agent != "" {
+		if os.Getenv("JMAN_JDTLS_HOME") != "" {
+			cmd.Args = append(cmd.Args[:1], append([]string{"-javaagent:" + agent}, cmd.Args[1:]...)...)
+		} else {
+			cmd.Args = append(cmd.Args, "--jvm-arg=-javaagent:"+agent)
+		}
+	}
 	cmd.Env = append(os.Environ(), "JAVA_HOME="+javaHome)
 	cmd.Stderr = log
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Pdeathsig: syscall.SIGTERM}
@@ -179,12 +213,16 @@ func (s *Session) start(ctx context.Context) error {
 	if e = cmd.Start(); e != nil {
 		stdin.Close()
 		log.Close()
+		s.failedStart(e.Error())
 		return e
 	}
 	s.cmd = cmd
 	s.processDone = make(chan struct{})
 	s.ready = make(chan struct{})
 	s.readyOnce = sync.Once{}
+	s.mu.Lock()
+	s.initialError = ""
+	s.mu.Unlock()
 	s.setState("starting", "")
 	s.rpc = lsp.New(stdout, stdin, s.handler)
 	done := s.processDone
@@ -204,6 +242,9 @@ func (s *Session) start(ctx context.Context) error {
 	}, &result)
 	if err != nil {
 		s.stop()
+		if ctx.Err() == nil {
+			s.failedStart(err.Error())
+		}
 		return err
 	}
 	if e = s.rpc.Notify("initialized", map[string]any{}); e != nil {
@@ -217,7 +258,15 @@ func (s *Session) start(ctx context.Context) error {
 		return fmt.Errorf("JDTLS exited; inspect %s", filepath.Join(dir, "stderr.log"))
 	case <-s.ready:
 	}
+	s.failures = 0
+	s.nextStart = time.Time{}
 	return nil
+}
+func (s *Session) failedStart(message string) {
+	s.failures++
+	delay := time.Second * time.Duration(1<<min(s.failures-1, 5))
+	s.nextStart = time.Now().Add(delay)
+	s.setState("failed", message)
 }
 func merge(dst, src map[string]any) {
 	for k, v := range src {
@@ -331,17 +380,42 @@ func (s *Session) sync(ctx context.Context, files map[string]string) ([]any, err
 		}
 	}
 	var out struct {
-		Problems []any `json:"problems"`
+		Problems     []any    `json:"problems"`
+		ProjectRoots []string `json:"projectRoots"`
 	}
 	if e := s.execute(ctx, "jman.sync", []any{}, &out); e != nil {
 		return nil, e
 	}
 	s.files = files
+	s.extraRoots = out.ProjectRoots
 	s.setState("ready", "")
 	if len(out.Problems) > 0 {
 		s.setState("degraded", fmt.Sprintf("%d project errors", len(out.Problems)))
 	}
 	return out.Problems, nil
+}
+func (s *Session) scan() (map[string]string, string, string, error) {
+	files, snapshot, build, e := scan(s.root)
+	if e != nil {
+		return nil, "", "", e
+	}
+	roots := append([]string{}, s.extraRoots...)
+	sort.Strings(roots)
+	for _, root := range roots {
+		if root == s.root || strings.HasPrefix(root, s.root+string(os.PathSeparator)) {
+			continue
+		}
+		extra, hash, bh, err := scan(root)
+		if err != nil {
+			return nil, "", "", err
+		}
+		for k, v := range extra {
+			files[k] = v
+		}
+		snapshot = digest([]byte(snapshot + root + hash))
+		build = digest([]byte(build + root + bh))
+	}
+	return files, snapshot, build, nil
 }
 func (s *Session) open(path, text string) error {
 	old, exists := s.documents[path]
