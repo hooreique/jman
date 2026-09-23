@@ -1,4 +1,8 @@
 import json
+import os
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import subprocess
 import sys
@@ -7,10 +11,57 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "bench"))
-from jman_bench import report
+from jman_bench import Events, live_agent, report
 
 
 class BenchmarkTests(unittest.TestCase):
+    def test_tool_loop_uses_provider_usage_without_double_counting(self):
+        from types import SimpleNamespace
+        calls = []
+
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *args):
+                pass
+
+            def do_POST(self):
+                calls.append(json.loads(self.rfile.read(int(self.headers["Content-Length"]))))
+                if len(calls) == 1:
+                    message = {"role": "assistant", "content": None, "tool_calls": [{"id": "call-1", "type": "function", "function": {"name": "shell", "arguments": json.dumps({"command": "test -z \"$JMAN_TEST_API_KEY\" && echo inspected"})}}]}
+                else:
+                    message = {"role": "assistant", "content": "Done"}
+                response = {"choices": [{"message": message}], "usage": {"prompt_tokens": 100, "completion_tokens": 20, "prompt_tokens_details": {"cached_tokens": 30}, "completion_tokens_details": {"reasoning_tokens": 5}}}
+                encoded = json.dumps(response).encode()
+                self.send_response(200)
+                self.send_header("Content-Length", str(len(encoded)))
+                self.end_headers()
+                self.wfile.write(encoded)
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        previous = os.environ.get("JMAN_TEST_API_KEY")
+        os.environ["JMAN_TEST_API_KEY"] = "synthetic-secret"
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                args = SimpleNamespace(api_key_env="JMAN_TEST_API_KEY", base_url=f"http://127.0.0.1:{server.server_port}", model="synthetic-test", max_turns=3, max_tokens=1000)
+                events = Events(Path(tmp) / "events.jsonl")
+                try:
+                    result = live_agent(args, tmp, dict(os.environ), "Inspect the project", events, time.monotonic()+10)
+                finally:
+                    events.close()
+                self.assertEqual(result["usage"], {"input": 200, "output": 40, "cacheRead": 60, "reasoning": 10})
+                self.assertEqual(result["reason"], "completed")
+                self.assertIn("inspected", calls[1]["messages"][-1]["content"])
+                self.assertNotIn("synthetic-secret", (Path(tmp) / "events.jsonl").read_text())
+        finally:
+            if previous is None:
+                os.environ.pop("JMAN_TEST_API_KEY", None)
+            else:
+                os.environ["JMAN_TEST_API_KEY"] = previous
+            server.shutdown()
+            server.server_close()
+            thread.join()
+
     def test_custom_project_and_evaluator(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

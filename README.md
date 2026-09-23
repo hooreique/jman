@@ -100,6 +100,8 @@ nix run .#bench -- report ./local/experiment
 
 OpenAI-compatible `/chat/completions` endpoint는 `--base-url`로 바꿀 수 있다. 다른 agent harness는 `--adapter-command`로 연결한다. 실행별 raw events, 수정 diff, 독립 평가 결과, JSON/Markdown report를 남긴다. `--prices rates.json`으로 input/output/cacheRead의 백만 토큰당 가격을 제공하면 추정 비용과 성공당 비용도 계산한다.
 
+사용자 Java 프로젝트와 문제는 `run --suite suite.json`으로 입력한다. template, 문제 문구, 허용된 수정 범위, 독립 평가 명령을 지정하는 형식은 [suite와 adapter 계약](docs/support.md#사용자-프로젝트와-문제)에 설명되어 있다.
+
 현재 실험 suite의 에이전트 과제는 내부 라이브러리 오인 사례다. 별도의 통합 fixture는 Lombok, MapStruct, QueryDSL/JPA, Spring context와 AOP self-invocation을 검증한다. **합성 adapter smoke test는 AI 성능이나 토큰 절감의 증거가 아니다. 실제 모델의 경제성 수치는 아직 측정되지 않았다.**
 
 ## 개발과 검증
@@ -125,6 +127,8 @@ nix flake check -L
 - 현재 benchmark shell adapter는 신뢰하는 에이전트를 disposable 환경에서 실행하는 용도다. adversarial sandbox는 제공하지 않는다.
 
 구현 현황과 남은 확장 범위는 [지원 범위](docs/support.md)를 참고한다.
+
+실제로 실행한 검사와 AI 경제성 측정 상태는 [검증 기록](docs/validation.md)에 정리했다.
 
 ## 설계 문서
 

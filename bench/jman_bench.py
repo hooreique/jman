@@ -341,7 +341,9 @@ def report(root):
         rng = random.Random(1729)
         samples = sorted(statistics.mean(rng.choices(differences, k=len(differences))) for _ in range(2000))
         interval = [samples[49], samples[1949]]
-    output = {"schemaVersion": 1, "arms": arms, "runs": len(results),
+    synthetic = [r["agent"].get("synthetic", False) or str(r["metadata"].get("model", "")).startswith("synthetic-") for r in results]
+    evidence = "synthetic-smoke" if synthetic and all(synthetic) else "mixed-synthetic" if any(synthetic) else "agent-trials"
+    output = {"schemaVersion": 1, "evidenceKind": evidence, "models": sorted({r["metadata"].get("model", "unrecorded") for r in results}), "arms": arms, "runs": len(results),
               "pairedTimeDeltaSeconds": statistics.mean(differences) if differences else None,
               "pairedTimeDeltaBootstrap95": interval,
               "limitations": ["One fixture family; exploratory results, not a population estimate.",
@@ -350,7 +352,7 @@ def report(root):
                               "Baseline jman availability is disabled through PATH, not an adversarial filesystem sandbox.",
                               "RSS is sampled for the daemon tree; detached Gradle daemons and short-lived processes may be missed. Pricing requires an explicit rate file."]}
     dump(root / "report.json", output)
-    lines = ["# jman benchmark", "", "| Arm | Success | Median seconds | Input tokens | Output tokens |", "|---|---:|---:|---:|---:|"]
+    lines = ["# jman benchmark", "", f"Evidence: **{evidence}**", "", "| Arm | Success | Median seconds | Input tokens | Output tokens |", "|---|---:|---:|---:|---:|"]
     for arm, value in arms.items():
         lines.append(f"| {arm} | {value['successes']}/{value['runs']} | {value['medianSeconds']} | {value['inputTokens']} | {value['outputTokens']} |")
     lines += ["", "## Limitations", *["- " + v for v in output["limitations"]]]

@@ -143,11 +143,18 @@ func (s *Session) Query(ctx context.Context, q Request) Response {
 		return r
 	}
 	if q.Command == "hover" {
-		var hover any
+		var hover struct {
+			Contents json.RawMessage `json:"contents"`
+			Range    *span           `json:"range"`
+		}
 		if e = s.rpc.Call(ctx, "textDocument/hover", params, &hover); e != nil {
 			return failure(q, "error", "LSP_FAILED", e, "")
 		}
-		r.Results = append(r.Results, Result{Name: p.Name, Detail: hover})
+		text := hoverText(hover.Contents)
+		if len(text) > q.MaxBytes {
+			r.Warnings = append(r.Warnings, "Hover documentation truncated by --max-bytes.")
+		}
+		r.Results = append(r.Results, Result{Name: p.Name, Snippet: clip(text, q.MaxBytes) + "\n", Detail: map[string]any{"range": hover.Range}})
 		return s.finish(q, r, snapshot, modelHash)
 	}
 	method := map[string]string{"definition": "textDocument/definition", "references": "textDocument/references", "implementations": "textDocument/implementation"}[q.Command]
@@ -302,6 +309,31 @@ func (s *Session) Query(ctx context.Context, q Request) Response {
 		r.Warnings = append(r.Warnings, "Static implementation candidates do not determine Spring bean or proxy selection.")
 	}
 	return s.finish(q, r, snapshot, modelHash)
+}
+func hoverText(raw json.RawMessage) string {
+	var value any
+	if json.Unmarshal(raw, &value) != nil {
+		return string(raw)
+	}
+	var text func(any) string
+	text = func(v any) string {
+		switch v := v.(type) {
+		case string:
+			return v
+		case map[string]any:
+			if s, ok := v["value"].(string); ok {
+				return s
+			}
+		case []any:
+			var parts []string
+			for _, p := range v {
+				parts = append(parts, text(p))
+			}
+			return strings.Join(parts, "\n\n")
+		}
+		return ""
+	}
+	return text(value)
 }
 func (s *Session) finish(q Request, r Response, before, modelBefore string) Response {
 	_, after, _, e := s.scan()
