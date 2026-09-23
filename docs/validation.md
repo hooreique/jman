@@ -44,7 +44,7 @@ Spring 실행 검사는 정적 references가 runtime proxy 경로를 전부 해�
 
 ## 실제 AI 경제성 측정 상태
 
-**미실행.** 개발 환경에 실제 모델을 호출할 API 인증 또는 외부 agent adapter 설정이 없었다. 따라서 성공률 개선, 토큰 절감률, 비용 절감률 수치를 보고하지 않는다. mock provider와 scripted adapter 결과는 실행기 검증에만 사용한다.
+실제 모델을 사용한 내부 라이브러리 출처 탐색의 3회 paired trial을 수행했다. 모델, OpenCode 버전, 방법, token·시간 결과와 한계는 [OpenCode JDTLS Origin Navigation Trial](../reports/2026-09-24-opencode-jdtls-origin-navigation-report.md)을 참고한다. mock provider와 scripted adapter 결과는 여전히 실행기 검증에만 사용한다.
 
 실험을 재개하는 명령:
 
