@@ -261,6 +261,8 @@ def trial(args, root, repetition, arm):
                         adapter="command" if args.adapter_command else "chat-completions",
                         started=time.time(), fixtureCommit=run(["git", "rev-parse", "HEAD"], project).stdout.strip(),
                         jmanVersion=command([args.jman, "--version"], project, env, 10)["stdout"].strip())
+        repositories = spec.get("repositories", [spec["project"]]) if spec else ["commerce", "internal-text"]
+        metadata["repositoryCommits"] = {relative: run(["git", "rev-parse", "HEAD"], Path(metadata["root"]) / relative).stdout.strip() for relative in repositories}
         events.emit("run_start", metadata=metadata)
         start = time.monotonic()
         deadline = start + args.timeout
@@ -278,6 +280,16 @@ def trial(args, root, repetition, arm):
         changed = run(["git", "diff", metadata["fixtureCommit"], "--name-only"], project).stdout.splitlines()
         changed += run(["git", "ls-files", "--others", "--exclude-standard"], project).stdout.splitlines()
         allowed_edits = copy_edits(project, clean_project, changed, allowed)
+        external_edits = {}
+        for relative, baseline in metadata["repositoryCommits"].items():
+            repository = Path(metadata["root"]) / relative
+            if repository.resolve() == project.resolve():
+                continue
+            files = run(["git", "diff", baseline, "--name-only"], repository).stdout.splitlines()
+            files += run(["git", "ls-files", "--others", "--exclude-standard"], repository).stdout.splitlines()
+            if files:
+                external_edits[relative] = files
+        allowed_edits = allowed_edits and not external_edits
         if spec:
             evaluation_env = dict(env, JMAN_EVAL_PROJECT=str(clean_project))
             checked = command(spec["evaluate"], clean_project, evaluation_env, args.timeout)
@@ -285,6 +297,7 @@ def trial(args, root, repetition, arm):
         else:
             verdict = evaluate(clean_project, clean["binary"])
         verdict["allowedEdits"] = allowed_edits
+        verdict["externalEdits"] = external_edits
         verdict["success"] = verdict["success"] and verdict["allowedEdits"]
         # Explanation scoring is deliberately separate from behavioral success.
         answer = result.get("answer", "")

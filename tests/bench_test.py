@@ -12,9 +12,19 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "bench"))
 from jman_bench import Events, live_agent, report
+from fixture import evaluate, materialize
 
 
 class BenchmarkTests(unittest.TestCase):
+    def test_nonterminating_solution_fails_evaluation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = materialize(Path(tmp) / "fixture")
+            source = Path(fixture["project"]) / "app/src/main/java/example/AccessService.java"
+            source.write_text(source.read_text().replace("System.out.println(new AccessService().isAdmin(args[0]));", "while (true) {}"))
+            result = evaluate(fixture["project"], fixture["binary"])
+            self.assertFalse(result["success"])
+            self.assertEqual(result["reason"], "runtime-timeout")
+
     def test_tool_loop_uses_provider_usage_without_double_counting(self):
         from types import SimpleNamespace
         calls = []

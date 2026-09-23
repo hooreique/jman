@@ -55,6 +55,7 @@ def materialize(destination):
     (artifact / "shared-text-2.4.1.pom").write_text('''<project><modelVersion>4.0.0</modelVersion><groupId>com.acme</groupId><artifactId>shared-text</artifactId><version>2.4.1</version></project>''')
     shutil.rmtree(classes)
     (commerce / ".gitignore").write_text(".gradle/\n**/build/\n**/bin/\n**/.project\n**/.classpath\n**/.factorypath\n**/.settings/\n")
+    (library / ".gitignore").write_text((commerce / ".gitignore").read_text())
     (library / "settings.gradle").write_text("rootProject.name = 'shared-text'\n")
     (library / "build.gradle").write_text("plugins { id 'java-library' }; group='com.acme'; version='2.4.1'\njava { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }\n")
     git_init(commerce)
@@ -71,15 +72,21 @@ def evaluate(project, binary):
     project, binary = Path(project), Path(binary)
     with tempfile.TemporaryDirectory(prefix="jman-eval-") as tmp:
         source = project / "app/src/main/java/example/AccessService.java"
-        result = subprocess.run(["javac", "--release", "17", "-cp", str(binary), "-d", tmp, str(source)], capture_output=True, text=True)
+        try:
+            result = subprocess.run(["javac", "--release", "17", "-cp", str(binary), "-d", tmp, str(source)], capture_output=True, text=True, timeout=30)
+        except subprocess.TimeoutExpired:
+            return {"success": False, "reason": "compile-timeout"}
         if result.returncode:
             return {"success": False, "reason": "compile", "stderr": result.stderr}
         cases = [(" admin ", "true"), ("ADMIN", "true"), ("\u2003admin\u2003", "true"), ("alice", "false"), ("superadmin", "false")]
         actual = []
         for value, expected in cases:
-            result = run(["java", "-cp", tmp + os.pathsep + str(binary), "example.AccessService", value])
-            actual.append({"input": value, "expected": expected, "actual": result.stdout.strip()})
-        return {"success": all(c["expected"] == c["actual"] for c in actual), "cases": actual}
+            try:
+                result = subprocess.run(["java", "-cp", tmp + os.pathsep + str(binary), "example.AccessService", value], capture_output=True, text=True, timeout=5)
+                actual.append({"input": value, "expected": expected, "actual": result.stdout.strip(), "returncode": result.returncode, "stderr": result.stderr})
+            except subprocess.TimeoutExpired:
+                return {"success": False, "reason": "runtime-timeout", "input": value, "cases": actual}
+        return {"success": all(c["expected"] == c["actual"] and c["returncode"] == 0 for c in actual), "cases": actual}
 
 
 if __name__ == "__main__":
