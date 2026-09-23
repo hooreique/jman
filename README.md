@@ -102,7 +102,9 @@ OpenAI-compatible `/chat/completions` endpoint는 `--base-url`로 바꿀 수 있
 
 사용자 Java 프로젝트와 문제는 `run --suite suite.json`으로 입력한다. template, 문제 문구, 허용된 수정 범위, 독립 평가 명령을 지정하는 형식은 [suite와 adapter 계약](docs/support.md#사용자-프로젝트와-문제)에 설명되어 있다.
 
-현재 실험 suite의 에이전트 과제는 내부 라이브러리 오인 사례다. 별도의 통합 fixture는 Lombok, MapStruct, QueryDSL/JPA, Spring context와 AOP self-invocation을 검증한다. **합성 adapter smoke test는 AI 성능이나 토큰 절감의 증거가 아니다. 실제 모델의 경제성 수치는 아직 측정되지 않았다.**
+현재 실험 suite의 에이전트 과제는 내부 라이브러리 오인 사례다. 별도의 통합 fixture는 Lombok, MapStruct, QueryDSL/JPA, Spring context와 AOP self-invocation을 검증한다. **합성 adapter smoke test는 AI 성능이나 token 절감의 증거가 아니다. 실제 모델로 수행한 제한된 반복 실험은 아래 리포트에서 확인할 수 있다.**
+
+실제 모델로 수행한 benchmark 리포트는 [`reports/`](reports/)에서 열람할 수 있다.
 
 ## 개발과 검증
 
