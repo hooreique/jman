@@ -1,6 +1,6 @@
 # 아키텍처와 구현 순서
 
-상태: 요구사항에 근거한 제안. 확장 API와 준비 상태 판단은 먼저 기술 검증한다.
+상태: 0.1 구현 구조와 후속 설계를 함께 기록한다. 실제 JDTLS/Gradle fixture 검증을 마쳤지만, 이 문서의 모든 확장 항목이 제공되는 것은 아니다. 현재 지원은 [지원 범위](support.md), 실행 결과는 [검증 기록](validation.md)을 따른다.
 
 ## 1. 구성
 
@@ -85,11 +85,11 @@ Nexus 인증과 private repository 설정은 기존 Gradle 환경을 이용한�
 - daemon 재시작, stale socket, JVM crash 뒤 복구를 검증한다.
 - `status`는 작은 요약, `doctor --json`은 JDK/Gradle/Lombok/processor/classpath의 상세 진단을 제공한다.
 
-Linux를 첫 지원 대상으로 하고 XDG 경로와 user-scoped socket을 사용한다. Home Manager user service를 제공하되 `nix run`의 lazy start도 가능하게 한다.
+package, app, dev shell은 `aarch64-darwin`, `aarch64-linux`, `x86_64-linux`에서 평가·제공한다. Unix socket과 lazy start는 세 대상에서 공통으로 사용한다. Home Manager의 systemd user service는 Linux에서만 만들며, Darwin에서는 패키지 설치와 수동 daemon 실행을 사용한다.
 
 ## 6. flake 패키징 계약
 
-구현 시 아래 outputs를 제공한다.
+현재 아래 outputs를 제공한다. package 구현은 `nix/packages/*/package.nix`에 분리했고, `overlays.default`는 caller의 nixpkgs로 재빌드하며 `overlays.pinned`는 이 flake의 고정 package를 제공한다.
 
 - `packages.<system>.jman`: CLI, daemon, skill, 고정 JDTLS와 호환 extension을 묶은 wrapper.
 - `packages.<system>.jman-bench`: Python runner와 report 도구.
@@ -98,7 +98,7 @@ Linux를 첫 지원 대상으로 하고 XDG 경로와 user-scoped socket을 사�
 - `checks.<system>`: unit/protocol contract, 작은 실제 JDTLS fixture smoke test, fixture oracle 검사.
 - `homeManagerModules.default`: user service와 자원 설정.
 
-첫 지원 system은 `x86_64-linux`다. 다른 system은 검증 후 추가한다.
+출력 대상은 `aarch64-darwin`, `aarch64-linux`, `x86_64-linux`다. CI/개발 환경에서 실제 통합 검사를 실행한 대상은 현재 `x86_64-linux`이며, 다른 두 대상은 flake 평가까지만 확인했다.
 
 `flake.lock`, JDTLS/extension/Lombok, build dependencies를 고정한다. 패키지 빌드와 deterministic checks는 Nix sandbox에서 실행되며 임의의 Gradle 네트워크 다운로드에 의존하지 않게 한다. 고정 artifact mirror/dependency closure를 먼저 준비한다.
 
@@ -106,25 +106,25 @@ Linux를 첫 지원 대상으로 하고 XDG 경로와 user-scoped socket을 사�
 
 ## 7. 구현 순서와 통과 조건
 
-### 단계 0: 가장 어려운 가정 검증
+### 완료: 단계 0 — 가장 어려운 가정 검증
 
 작은 caller build, 내부 라이브러리 binary/sources, 동일 FQN의 오래된 decoy source를 만든다. 고정 JDTLS에 실제 질의를 보내 JAR 선택, classpath provenance, source 읽기를 확인한다. Lombok getter/builder, Gradle source generation도 최소 fixture로 검증한다.
 
 통과 조건: 실제 binary binding을 증거로 제시할 수 있고, 소스 불일치·생성 실패를 올바르게 표현한다. 불가능한 API 지점과 필요한 extension 범위가 문서화되어야 한다.
 
-### 단계 1: 수직 MVP
+### 완료: 단계 1 — 수직 MVP
 
 flake, `jman definition/read/status/doctor/prepare`, 최소 daemon/session, skill, 내부 JAR 착각 benchmark 한 문제와 두 실험군 실행을 끝까지 연결한다.
 
-통과 조건: 별도 worktree에서 재현 가능하며 첫 경제성 raw report가 생성된다. 효과가 없거나 악화되어도 결과를 그대로 보고한다.
+통과 조건 중 binding/worktree/독립 evaluator는 충족했다. 실제 모델 API 인증 또는 외부 adapter가 없어 경제성 raw report는 아직 생성하지 않았으며, 합성 adapter smoke 결과를 경제성 증거로 사용하지 않는다.
 
-### 단계 2: 첫 제품 요구사항 완성
+### 대부분 완료: 단계 2 — 첫 제품 요구사항
 
 references/implementations/hover/refresh, source set/variant/composite build, generated source, file freshness, timeout/crash recovery, resource limits, user service를 완성한다.
 
-통과 조건: requirements의 MUST 수용 조건과 benchmark deterministic oracle을 통과한다.
+references/implementations/hover/refresh, source set, composite build, generated source, file freshness, timeout/backoff, user service를 구현·검증했다. 전체 MUST 충족 여부는 `requirements.md`의 목표와 `support.md`의 미지원 목록을 대조해 판단한다.
 
-### 단계 3: 비교 실험과 확장
+### 진행 예정: 단계 3 — 실제 agent 비교 실험과 확장
 
 여러 모델/문제/반복으로 효과를 검증하고 bottleneck을 개선한다. cross-repository references, Spring 관계, MCP adapter는 효과와 필요를 확인해 추가한다.
 
@@ -136,4 +136,4 @@ references/implementations/hover/refresh, source set/variant/composite build, ge
 - [JDTLS plugin.xml](https://github.com/eclipse-jdtls/eclipse.jdt.ls/blob/main/org.eclipse.jdt.ls.core/plugin.xml): classpath/source attachment 명령, delegate command extension, source/decompiler provider.
 - [vscode-java 설정](https://github.com/redhat-developer/vscode-java/blob/master/package.json): 실행/Gradle/project JDK 분리, Lombok, Gradle annotation processing 설정.
 
-이는 지원 가능성의 근거이며 jman에서 검증한 결과는 아니다. VS Code client 설정이 headless JDTLS에서 자동으로 똑같이 작동한다고 가정하지 않는다. 최종 지원 행렬은 고정 release에서 integration test로 확정한다.
+이는 구현 선택의 upstream 근거다. headless JDTLS, Lombok agent, Gradle import는 고정 release에서 integration test로 검증했다. 다만 VS Code client 설정 전체가 headless JDTLS에 자동 적용된다고 가정하지 않으며, 지원 행렬의 실제 실행 대상은 `validation.md`에 기록한다.

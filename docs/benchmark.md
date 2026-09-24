@@ -1,5 +1,7 @@
 # 벤치마크와 경제성 검증
 
+상태: runner, deterministic fixture, 독립 evaluator, provider/harness adapter는 구현·검증됐다. 실제 모델 API 인증 또는 외부 adapter 설정이 없어서 실제 agent A/B 결과와 경제성 수치는 아직 없다. 이 문서의 가설·권장 측정 항목과 현재 runner가 수집하는 항목을 구분한다. 자세한 상태는 [검증 기록](validation.md)을 본다.
+
 ## 1. 검증할 가설
 
 H1: jman은 동명·동일 경로의 오래된 소스로 인한 잘못된 판단과 수정을 줄인다.
@@ -10,30 +12,29 @@ H3: 초기 import 비용은 반복 작업에서 상각된다. 한 번의 짧은 
 
 평가 대상은 navigation latency 자체와 **에이전트의 문제 해결 성과** 두 가지다. 짧은 응답만으로 경제성이 증명되지는 않는다.
 
-## 2. 저장소에 포함할 예시 환경
+## 2. 현재 예시 환경과 목표 suite
 
-하나의 benchmark suite가 여러 실제 독립 저장소를 materialize한다. parent 폴더 아래 여러 디렉터리만 있는 구조를 multi-repository 검증으로 대신하지 않는다.
+기본 `fixture` 명령은 `commerce`와 `internal-text`를 새 독립 Git repository로 materialize하고 로컬 Maven repository에 `shared-text:2.4.1` artifact를 만든다. `stack` fixture는 Lombok, MapStruct, QueryDSL/JPA, Spring AOP 통합 검사에 사용하지만 현재 agent A/B 문제는 아니다.
 
 ```text
-fixtures/source/                 추적되는 fixture template
-  commerce/                     app, domain, persistence Gradle multi-project
+fixtures/                       추적되는 fixture template
+  commerce/                     app + 오래된 decoy source를 가진 Gradle multi-project
   internal-text/                실제 내부 라이브러리 소스
-  consumer/                     다른 버전의 내부 라이브러리 소비자
-  artifact-recipes/             고정 JAR/sources/POM/module metadata 생성
+  stack/                        generated-code와 Spring runtime fixture
 
-run/<id>/                       실행별 새 디렉터리
-  repos/*                       독립 Git 저장소 / worktree
-  maven-repository/              내부 Maven 저장소 재현
-  agent-workspace/               agent가 읽을 수 있는 자료
-  evaluation/                   별도 evaluator에서만 접근 가능한 정답/검사
-  events.jsonl
-  report.json
-  report.md
+<output>/                      experiment.json, report.json, report.md
+  <repetition>-<arm>/          실행별 새 디렉터리
+    workspace/                  agent가 수정하는 독립 Git repository
+    evaluation-workspace/       종료 뒤 허용 patch만 적용하는 별도 환경
+    cache/                      arm별 daemon/Gradle cache
+    events.jsonl
+    patch.diff
+    result.json
 ```
 
-기본 fixture는 로컬 Maven repository로 Nexus의 artifact resolution 상황을 재현한다. 인증, HTTP 실패, repository 정책은 별도의 HTTP repository 통합 시나리오로 검증한다. 기본 실행마다 실제 Nexus 서비스를 요구하지 않는다.
+기본 fixture는 로컬 Maven repository로 Nexus의 artifact resolution 상황을 재현한다. 인증, HTTP 실패, repository 정책은 아직 별도 HTTP repository scenario로 구현하지 않았으며, 기본 실행에 실제 Nexus 서비스를 요구하지 않는다.
 
-### 필수 시나리오
+### 목표 시나리오와 현재 검증
 
 | 시나리오 | 함정 | 독립적인 정답 근거 |
 |---|---|---|
@@ -50,15 +51,15 @@ run/<id>/                       실행별 새 디렉터리
 | 갱신 | dependency 변경/branch 전환 뒤 오래된 index | 변경 후 Gradle oracle |
 | 일반 탐색 대조군 | 단순 local method로 도구 이점이 작음 | 간단한 동작 테스트 |
 
-Spring fixture에는 self-invocation, 조건부 bean처럼 정적 탐색으로 단정하면 틀리는 문제도 둔다. 도구가 한계를 잘 표시하는지도 점검한다.
+현재 Spring fixture는 self-invocation과 proxy advice를 실행 검증한다. 조건부 bean 같은 추가 runtime scenario는 후속 suite 대상이며, 도구가 정적 분석의 한계를 표시하는지는 현재 integration response와 문서에서 점검한다.
 
-초기 suite는 내부 라이브러리 분리부터 만들되 특정 도구에 유리한 함정만으로 전체 성능을 주장하지 않는다. 진단/설명 문제와 실제 코드 수정 문제를 모두 포함한다.
+현재 agent 과제는 내부 라이브러리 분리와 실제 코드 수정 한 가지다. 나머지 표의 항목은 integration fixture 또는 후속 A/B suite 대상으로, 이 한 문제의 결과를 전체 Java 환경의 성능으로 일반화하지 않는다.
 
 ## 3. 실험군
 
 - **A: baseline** — 파일 읽기/검색/shell, Gradle, 동일한 repository/source 접근 권한. jman과 jman skill은 없음.
 - **B: jman** — A와 같은 환경에 jman과 짧은 skill 추가.
-- **C: 일반 LSP 대조군, 후속** — 같은 JDTLS와 classpath를 일반 LSP adapter로 노출. 일반적인 의미 탐색의 효과와 jman의 출처/응답 설계 효과를 구분한다.
+- **C: 일반 LSP 대조군, 미구현** — 같은 JDTLS와 classpath를 일반 LSP adapter로 노출. 일반적인 의미 탐색의 효과와 jman의 출처/응답 설계 효과를 구분한다.
 
 각 paired trial에서 동일 모델 버전, sampling 설정, 문제 문구, 시간/토큰 예산, 시작 commit, 파일과 의존성을 사용한다. 도구 접근 정보와 skill만 실험군에 맞게 바뀐다. 동일 seed 지원 여부도 기록하며 같은 seed를 결과 동일성 보장으로 해석하지 않는다.
 
@@ -82,32 +83,32 @@ agent는 매번 새 session에서 시작한다. 순서는 randomize하고, 양 �
 
 agent adapter는 provider/harness가 제공하는 raw usage를 보존한다. 기록할 수 없는 토큰 항목은 `unavailable`로 두며 응답 글자 수를 실제 청구 토큰으로 바꾸지 않는다.
 
-### Run metadata
+### 현재 Run metadata
 
-fixture revision, task, arm, repetition, model/provider/version, sampling, skill hash, jman/JDTLS/JDK/Gradle 버전, hardware, OS, cache mode, 시작/종료 시각, 예산과 종료 사유를 기록한다.
+현재는 fixture/repository revision, task, arm, repetition, model, cache mode, skill hash, jman version, 시작 시각, 예산과 종료 사유를 기록한다. provider/harness가 제공하면 raw usage도 보존한다. provider version, sampling, hardware/OS의 완전한 수집은 adapter 확장 항목이다.
 
 ### 이벤트
 
 model request/response와 usage, tool 시작/종료/결과 크기, daemon/import 시작/완료, 오류·재시도, patch, evaluator 결과. harness 내부 재시도와 압축/요약 호출도 노출되는 범위에서 포함한다.
 
-### 주요 지표
+### 현재 지표와 목표 지표
 
 - 작업 성공률, 잘못된 dependency 선택률, 잘못된 파일 수정률.
 - 전체 및 정답 도달까지의 wall time, tool call 수, 읽은 파일/출력 byte 수.
-- input/output/cache-read/cache-write/reasoning token: provider 의미를 보존하고 중복 합산하지 않는다.
-- 실행 시점 가격표로 계산한 LLM 비용과 provider가 제공한 실제 청구 금액을 구분한다.
-- jman/JDTLS/Gradle peak RSS, CPU time, import time, 질의 latency p50/p95.
+- input/output/cache-read/reasoning token: provider 의미를 보존하고 중복 합산하지 않는다. cache-write는 현재 별도 집계하지 않는다.
+- 명시한 가격 파일로 계산한 추정 LLM 비용을 기록한다. provider의 실제 청구 금액은 현재 수집하지 않는다.
+- daemon과 관찰된 자식 프로세스의 sampled peak RSS/CPU time을 기록한다. Gradle daemon, 짧은 프로세스, import time, 질의 latency p50/p95는 현재 완전하게 측정하지 않는다.
 - skill, tool schema, tool output을 포함한 전체 model input 비용.
 
 추가한 tool output은 뒤이은 여러 model request에 반복 입력될 수 있으므로 한 번의 출력 토큰만 세지 않는다. 전체 request usage가 주 지표다.
 
-### 집계
+### 현재 집계와 권장 분석
 
 성공 사례의 비용과 전체 시도 비용을 모두 보고한다. 빨리 오답을 낸 실행이 싸다는 이유로 우수하다고 판단하지 않는다.
 
 `cost per success = 모든 실행 비용 합 / 성공 실행 수`를 보고하고 성공 0건이면 정의 불가로 표시한다. 이는 관측된 집계값이며 자동 재시도 정책의 기대 비용과 같다고 가정하지 않는다.
 
-task별 paired 차이와 전체 성공률 차이, confidence interval을 제시한다. 반복이 task 내부에 묶인 구조를 고려해 task 단위 cluster bootstrap 등으로 불확실성을 추정한다. 작은 suite의 결과를 모든 Java 프로젝트로 일반화하지 않는다.
+현재 runner는 arm별 성공률/median time/token 합계와 같은 repetition의 paired time delta 및 간단한 bootstrap interval을 report한다. task 단위 cluster bootstrap, 성공률의 신뢰구간, 여러 task에 대한 추론은 후속 분석 항목이다. 작은 suite의 결과를 모든 Java 프로젝트로 일반화하지 않는다.
 
 초기 탐색은 task/arm당 5회 정도로 시작하되 결과를 확증적 증거로 부르지 않는다. pilot 변동성을 확인한 후 본실험의 반복 수와 주요 지표를 고정한다. 중간에 유리한 실행만 골라 중단하지 않는다.
 
@@ -125,17 +126,18 @@ task별 paired 차이와 전체 성공률 차이, confidence interval을 제시�
 
 시간 손익분기점의 단순 추정은 `준비 시간 / 작업당 평균 절약 시간`이다. 절약 시간이 0 이하이면 손익분기점이 없다. 가격을 부여하지 않은 CPU/메모리 비용을 임의로 달러 비용에 합치지 않고 별도 보고한다.
 
-## 7. runner 계약
+## 7. 현재 runner 계약
 
-제안 명령:
+명령:
 
 ```sh
-jman-bench validate --suite fixtures/commerce
-jman-bench run --suite fixtures/commerce --arms baseline,jman --repetitions 5 --cache dependency-warm
-jman-bench report run/<experiment-id>
+jman-bench fixture ./local/example
+jman-bench validate --output ./local/oracle-check
+jman-bench run --model YOUR_MODEL --output ./local/experiment --arms baseline,jman --repetitions 5 --cache dependency-warm
+jman-bench report ./local/experiment
 ```
 
-manifest는 task prompt, fixture revision, 공개 파일, evaluator, limits, cache policy를 정의한다. agent adapter는 launch, tool access, event stream, usage, cancellation, final patch 수집을 맡는다. 특정 harness 종속 부분은 adapter에 한정한다.
+사용자 suite는 `--suite suite.json`으로 넣는다. manifest는 template, project, repositories, prompt, allowedEdits, evaluate argv를 정의한다. 선택적으로 prepare와 explanationTerms를 둘 수 있다. agent adapter는 launch, tool access, event stream, usage, cancellation, final patch 수집을 맡는다. 특정 harness 종속 부분은 adapter에 한정한다.
 
 CLI 옵션의 cache 명칭과 실제 cache 초기화 절차를 manifest에 기록한다. 재개 시 완료 run을 덮어쓰지 않고, 실패한 run도 report에 유지한다. raw data만으로 집계를 다시 생성할 수 있어야 한다.
 

@@ -1,6 +1,6 @@
 # 요구사항과 에이전트 인터페이스
 
-상태: 초기 설계 제안. MUST는 첫 제품 버전의 수용 조건이고, SHOULD는 후속 개선이다. 모든 기술스택을 첫 구현 단계에서 완성한다는 뜻은 아니다.
+상태: 0.1 구현 뒤에도 유지하는 제품 요구사항이다. 이 문서의 MUST/SHOULD는 설계 목표와 수용 기준이며, 모두 구현됐다는 선언은 아니다. 실제 제공 기능·알려진 경계는 [지원 범위](support.md), 실행한 검사는 [검증 기록](validation.md)을 기준으로 한다.
 
 ## 1. 제품 목표
 
@@ -39,9 +39,9 @@
 | `status` / `doctor` | 준비 상태 / 원인과 복구 방법 | MUST |
 | `prepare` | 미리 import하고 준비 상태 확인 | MUST |
 | `refresh` | 의존성·빌드 모델 재해석 | MUST |
-| `symbols QUERY` | 위치를 모를 때 후보 탐색 | SHOULD |
-| `callers` / `callees` | 정적 호출 관계 | SHOULD |
-| `deps` | 선택 버전·variant·의존 경로 상세 조회 | SHOULD |
+| `symbols QUERY` | 위치를 모를 때 후보 탐색 | SHOULD — 미구현 |
+| `callers` / `callees` | 정적 호출 관계 | SHOULD — 미구현 |
+| `deps` | 선택 version·variant·artifact 상세 조회 | 구현됨 |
 
 `symbols` 결과는 발견 후보이지 호출 바인딩의 증거가 아니다.
 
@@ -86,7 +86,7 @@ source: /home/user/.cache/jman/sources/<digest>/com/acme/text/TextUtil.java:31
 
 동명 후보 전체와 전체 dependency graph는 기본 응답에 넣지 않는다. `--explain`으로 바인딩 근거, binary digest, variant, source 대응 근거와 비교 후보를 요청한다.
 
-외부 소스는 읽기 전용 캐시 파일로 제공해 기존 파일 읽기 도구로도 볼 수 있게 한다. `read TARGET --lines 31:70`은 도구가 반환한 source handle 또는 경로를 받는다. handle은 snapshot에 귀속되며 만료 시 명시적으로 실패한다.
+외부 소스는 읽기 전용 캐시 파일로 제공해 기존 파일 읽기 도구로도 볼 수 있게 한다. 현재 `read TARGET --lines 31:70`은 반환된 경로를 받는다. snapshot에 귀속되는 별도 source handle과 만료 계약은 아직 구현하지 않았다.
 
 ### 2.4 구조화 응답과 실패 계약
 
@@ -110,7 +110,7 @@ MUST: import 문자열, FQN, 디렉터리 유사도가 아닌 호출자 compilat
 
 ### R2. binary와 source의 출처를 구분
 
-MUST: 실제 classpath entry와 binary digest를 추적한다. source JAR 좌표 일치만으로 binary와 정확히 동일한 빌드의 소스라고 단정하지 않는다. source 대응 근거를 `verified`, `coordinate-only`, `unverified`, `missing`으로 구별한다.
+MUST: 실제 classpath entry와 binary digest를 추적한다. source JAR 좌표 일치만으로 binary와 정확히 동일한 빌드의 소스라고 단정하지 않는다. source 대응 근거를 `verified`, `coordinate-only`, `unverified`, `missing`으로 구별한다. 현재 구현은 `coordinate-only`, `unverified`, `missing`만 생성하며, 검증된 source provenance registry는 아직 없다.
 
 `verified`는 신뢰할 수 있는 빌드 provenance 등으로 binary와 source 쌍이 확인된 경우에만 사용한다. JAR의 `pom.properties`는 보조 자료이며 shaded JAR의 선택 버전 근거로 단독 사용하지 않는다.
 
