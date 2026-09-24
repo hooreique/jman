@@ -46,7 +46,8 @@ Options:
   --json          Versioned structured response
   --explain       Include full provenance and coverage in text output
 
-Environment: JMAN_SOCKET, JMAN_CACHE_HOME; project settings: .jman.json
+Environment: JMAN_SOCKET, JMAN_CACHE_HOME, XDG_CACHE_HOME, XDG_RUNTIME_DIR
+Project settings: .jman.json
 `
 
 func main()            { os.Exit(run(os.Args[1:])) }

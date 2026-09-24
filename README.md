@@ -120,6 +120,8 @@ jman discovers a Gradle build root from settings or build files. Use `--project 
 
 `jman prepare --generate` runs only the configured `generateTasks` before importing. Run `jman refresh` after changing build or dependency inputs.
 
+See [cache paths and cleanup](docs/support.md#cache-paths-and-cleanup) for environment overrides and removing local caches.
+
 ## Install the agent skill
 
 ```sh
