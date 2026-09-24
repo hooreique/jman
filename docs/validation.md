@@ -7,9 +7,11 @@ Last updated: 2026-09-24. Runtime versions and fixture artifacts are fixed by `f
 ```sh
 nix develop --command go test -race ./...
 nix develop --command go vet ./...
-nix flake check -L
+nix flake check --no-write-lock-file --print-build-logs
 nix build .#jman .#jman-bench
 ```
+
+The flake checks include Go race tests and explicit vet checks, the packaged benchmark CLI smoke check, benchmark-runner tests, and the integration suite. The local/CI command and platform matrix are documented in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 The integration suite runs JDTLS 1.60.0, Java 21, Gradle 8.14.4, and the jman Java extension. Gradle runs offline against Nix-fixed fixture dependencies.
 
