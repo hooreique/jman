@@ -1,7 +1,8 @@
-{ stdenvNoCC
-, jdk21
-, jdt-language-server
-, jmanSrc ? ../../..
+{
+  stdenvNoCC,
+  jdk21,
+  jdt-language-server,
+  jmanSrc ? ../../..,
 }:
 
 stdenvNoCC.mkDerivation {

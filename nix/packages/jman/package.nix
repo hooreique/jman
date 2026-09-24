@@ -1,11 +1,12 @@
-{ buildGoModule
-, makeWrapper
-, jdk21
-, jdt-language-server
-, gradle
-, lombokAgent
-, extension
-, jmanSrc ? ../../..
+{
+  buildGoModule,
+  makeWrapper,
+  jdk21,
+  jdt-language-server,
+  gradle,
+  lombokAgent,
+  extension,
+  jmanSrc ? ../../..,
 }:
 
 buildGoModule {

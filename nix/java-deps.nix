@@ -2,35 +2,179 @@
 { pkgs }:
 let
   entries = [
-    [ "org.projectlombok" "lombok" "1.18.48" "" "sha256-hUd6RlXrssB0qQmc+3Sb5FREn+5WTUKCYQ3xuF98UIs=" ]
-    [ "org.mapstruct" "mapstruct" "1.6.3" "" "sha256-ALUkZ/MdSC+Gc7C3Qwb0vgowXNzjHlh7wbPXv3efHb8=" ]
-    [ "org.mapstruct" "mapstruct-processor" "1.6.3" "" "sha256-AwW24u7meJdM3gxOh+CdZpJikLZAFz7DylqB3tvFa/8=" ]
-    [ "com.querydsl" "querydsl-jpa" "5.1.0" "jakarta" "sha256-AbBktRHgk87/KoaYgpNUtPsdwI9XbkBd1t+oqzVzbKI=" ]
-    [ "com.querydsl" "querydsl-apt" "5.1.0" "jakarta" "sha256-mw4PGCBZMM4eIasDdYxGwGm5LUQYlWv4Ro2FiHzS3+8=" ]
-    [ "com.querydsl" "querydsl-core" "5.1.0" "" "sha256-V6MDPdu02ShVKzNEO+cZW8PKum+oXNmkkryHSl75jI4=" ]
-    [ "com.querydsl" "querydsl-codegen" "5.1.0" "" "sha256-az2v3zI3Db+kX2SacZT6tFBnlK7+h5rCP1/VylmkYiY=" ]
-    [ "com.querydsl" "codegen-utils" "5.1.0" "" "sha256-BjNjTnT7cW6pmNnTHJnI3Gwk6m6QYEby/EcHFIrFiIg=" ]
-    [ "com.mysema.commons" "mysema-commons-lang" "0.2.4" "" "sha256-273WgWsz076tUPTSF4Jfz1aNUKQ6+IHfXN0BRowrbv4=" ]
-    [ "javax.inject" "javax.inject" "1" "" "sha256-kcdwRKUMSBY2wy2Rb9ickRinIZU5BFLIEGUID5V95/8=" ]
-    [ "jakarta.persistence" "jakarta.persistence-api" "3.1.0" "" "sha256-R1OJRG01xvRsVlcot1bcUIwoRkTqJpBkTg2OfjOdQv0=" ]
-    [ "jakarta.annotation" "jakarta.annotation-api" "2.1.1" "" "sha256-X2X9r0JO7itV4diCupuzdr6T+wmze4CL5uIuiFHJCf4=" ]
-    [ "io.github.classgraph" "classgraph" "4.8.146" "" "sha256-GEuDGcRjZWZy40gN6tO9t317EW1V86YY9PVWTo9voKQ=" ]
-    [ "org.eclipse.jdt" "ecj" "3.26.0" "" "sha256-rAulh26vfrtHdJoNG+F5xR8ZS53QuHXRwJ4bUw9aLbU=" ]
-    [ "org.springframework" "spring-context" "6.2.3" "" "sha256-U/7qbYxholCJ2MR0xPkuvSTw7361Ls2vRvEemiU/204=" ]
-    [ "org.springframework" "spring-aop" "6.2.3" "" "sha256-Xm/D2pDBlD8vzl8G7wTVhhh84AYv4YbYCs1TEJBlIF0=" ]
-    [ "org.springframework" "spring-beans" "6.2.3" "" "sha256-TiidbAqj6nRjMAXa4G18yCdRDluEDWi/zr3PC902P0Q=" ]
-    [ "org.springframework" "spring-core" "6.2.3" "" "sha256-SVMWhN8jBPDmEfd1+rp5Jzx3UE632FZZLYMOI4np6xQ=" ]
-    [ "org.springframework" "spring-expression" "6.2.3" "" "sha256-6QHia6qg4zPOLMTynZENYwwfemxsuZrHo8QRpQa1t4A=" ]
-    [ "org.springframework" "spring-jcl" "6.2.3" "" "sha256-jGXsXtZIlmpHDmtIsny+v18fQSvUayQ+ARHF1dlu/oY=" ]
-    [ "io.micrometer" "micrometer-observation" "1.14.4" "" "sha256-KN1LABwU/BOwvEhTViEhSRZRiJWSTjzlKKYEIFsf8KE=" ]
-    [ "io.micrometer" "micrometer-commons" "1.14.4" "" "sha256-a7D1b7iPZd20sIDj2AFl7rF0DyInuguKw4YQmWn36b8=" ]
+    [
+      "org.projectlombok"
+      "lombok"
+      "1.18.48"
+      ""
+      "sha256-hUd6RlXrssB0qQmc+3Sb5FREn+5WTUKCYQ3xuF98UIs="
+    ]
+    [
+      "org.mapstruct"
+      "mapstruct"
+      "1.6.3"
+      ""
+      "sha256-ALUkZ/MdSC+Gc7C3Qwb0vgowXNzjHlh7wbPXv3efHb8="
+    ]
+    [
+      "org.mapstruct"
+      "mapstruct-processor"
+      "1.6.3"
+      ""
+      "sha256-AwW24u7meJdM3gxOh+CdZpJikLZAFz7DylqB3tvFa/8="
+    ]
+    [
+      "com.querydsl"
+      "querydsl-jpa"
+      "5.1.0"
+      "jakarta"
+      "sha256-AbBktRHgk87/KoaYgpNUtPsdwI9XbkBd1t+oqzVzbKI="
+    ]
+    [
+      "com.querydsl"
+      "querydsl-apt"
+      "5.1.0"
+      "jakarta"
+      "sha256-mw4PGCBZMM4eIasDdYxGwGm5LUQYlWv4Ro2FiHzS3+8="
+    ]
+    [
+      "com.querydsl"
+      "querydsl-core"
+      "5.1.0"
+      ""
+      "sha256-V6MDPdu02ShVKzNEO+cZW8PKum+oXNmkkryHSl75jI4="
+    ]
+    [
+      "com.querydsl"
+      "querydsl-codegen"
+      "5.1.0"
+      ""
+      "sha256-az2v3zI3Db+kX2SacZT6tFBnlK7+h5rCP1/VylmkYiY="
+    ]
+    [
+      "com.querydsl"
+      "codegen-utils"
+      "5.1.0"
+      ""
+      "sha256-BjNjTnT7cW6pmNnTHJnI3Gwk6m6QYEby/EcHFIrFiIg="
+    ]
+    [
+      "com.mysema.commons"
+      "mysema-commons-lang"
+      "0.2.4"
+      ""
+      "sha256-273WgWsz076tUPTSF4Jfz1aNUKQ6+IHfXN0BRowrbv4="
+    ]
+    [
+      "javax.inject"
+      "javax.inject"
+      "1"
+      ""
+      "sha256-kcdwRKUMSBY2wy2Rb9ickRinIZU5BFLIEGUID5V95/8="
+    ]
+    [
+      "jakarta.persistence"
+      "jakarta.persistence-api"
+      "3.1.0"
+      ""
+      "sha256-R1OJRG01xvRsVlcot1bcUIwoRkTqJpBkTg2OfjOdQv0="
+    ]
+    [
+      "jakarta.annotation"
+      "jakarta.annotation-api"
+      "2.1.1"
+      ""
+      "sha256-X2X9r0JO7itV4diCupuzdr6T+wmze4CL5uIuiFHJCf4="
+    ]
+    [
+      "io.github.classgraph"
+      "classgraph"
+      "4.8.146"
+      ""
+      "sha256-GEuDGcRjZWZy40gN6tO9t317EW1V86YY9PVWTo9voKQ="
+    ]
+    [
+      "org.eclipse.jdt"
+      "ecj"
+      "3.26.0"
+      ""
+      "sha256-rAulh26vfrtHdJoNG+F5xR8ZS53QuHXRwJ4bUw9aLbU="
+    ]
+    [
+      "org.springframework"
+      "spring-context"
+      "6.2.3"
+      ""
+      "sha256-U/7qbYxholCJ2MR0xPkuvSTw7361Ls2vRvEemiU/204="
+    ]
+    [
+      "org.springframework"
+      "spring-aop"
+      "6.2.3"
+      ""
+      "sha256-Xm/D2pDBlD8vzl8G7wTVhhh84AYv4YbYCs1TEJBlIF0="
+    ]
+    [
+      "org.springframework"
+      "spring-beans"
+      "6.2.3"
+      ""
+      "sha256-TiidbAqj6nRjMAXa4G18yCdRDluEDWi/zr3PC902P0Q="
+    ]
+    [
+      "org.springframework"
+      "spring-core"
+      "6.2.3"
+      ""
+      "sha256-SVMWhN8jBPDmEfd1+rp5Jzx3UE632FZZLYMOI4np6xQ="
+    ]
+    [
+      "org.springframework"
+      "spring-expression"
+      "6.2.3"
+      ""
+      "sha256-6QHia6qg4zPOLMTynZENYwwfemxsuZrHo8QRpQa1t4A="
+    ]
+    [
+      "org.springframework"
+      "spring-jcl"
+      "6.2.3"
+      ""
+      "sha256-jGXsXtZIlmpHDmtIsny+v18fQSvUayQ+ARHF1dlu/oY="
+    ]
+    [
+      "io.micrometer"
+      "micrometer-observation"
+      "1.14.4"
+      ""
+      "sha256-KN1LABwU/BOwvEhTViEhSRZRiJWSTjzlKKYEIFsf8KE="
+    ]
+    [
+      "io.micrometer"
+      "micrometer-commons"
+      "1.14.4"
+      ""
+      "sha256-a7D1b7iPZd20sIDj2AFl7rF0DyInuguKw4YQmWn36b8="
+    ]
   ];
-  jars = map (e: let
-    group = builtins.elemAt e 0; artifact = builtins.elemAt e 1; version = builtins.elemAt e 2;
-    classifier = builtins.elemAt e 3;
-    name = "${artifact}-${version}${pkgs.lib.optionalString (classifier != "") "-${classifier}"}.jar";
-  in { inherit name; path = pkgs.fetchurl {
-    url = "https://repo.maven.apache.org/maven2/${builtins.replaceStrings [ "." ] [ "/" ] group}/${artifact}/${version}/${name}";
-    hash = builtins.elemAt e 4;
-  }; }) entries;
-in pkgs.linkFarm "jman-java-fixture-dependencies" jars
+  jars = map (
+    e:
+    let
+      group = builtins.elemAt e 0;
+      artifact = builtins.elemAt e 1;
+      version = builtins.elemAt e 2;
+      classifier = builtins.elemAt e 3;
+      name = "${artifact}-${version}${pkgs.lib.optionalString (classifier != "") "-${classifier}"}.jar";
+    in
+    {
+      inherit name;
+      path = pkgs.fetchurl {
+        url = "https://repo.maven.apache.org/maven2/${
+          builtins.replaceStrings [ "." ] [ "/" ] group
+        }/${artifact}/${version}/${name}";
+        hash = builtins.elemAt e 4;
+      };
+    }
+  ) entries;
+in
+pkgs.linkFarm "jman-java-fixture-dependencies" jars

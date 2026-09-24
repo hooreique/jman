@@ -3,7 +3,8 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/ef34387ddd751e1ab8857adf4676492d32eb24ec";
 
-  outputs = { self, nixpkgs }:
+  outputs =
+    { self, nixpkgs }:
     let
       forAllSys =
         perSys:
@@ -11,7 +12,8 @@
           system: perSys nixpkgs.legacyPackages.${system}
         );
 
-      packageSet = pkgs:
+      packageSet =
+        pkgs:
         let
           lombokAgent = pkgs.callPackage ./nix/packages/lombok-agent/package.nix { };
           extension = pkgs.callPackage ./nix/packages/extension/package.nix { };
@@ -21,17 +23,22 @@
           bench = pkgs.callPackage ./nix/packages/bench/package.nix {
             inherit jman;
           };
-        in {
+        in
+        {
           inherit extension jman lombokAgent;
           jman-bench = bench;
           default = jman;
         };
-    in {
+    in
+    {
       packages = forAllSys packageSet;
 
-      apps = forAllSys (pkgs:
-        let packages = packageSet pkgs;
-        in {
+      apps = forAllSys (
+        pkgs:
+        let
+          packages = packageSet pkgs;
+        in
+        {
           default = {
             type = "app";
             program = "${packages.jman}/bin/jman";
@@ -40,17 +47,28 @@
             type = "app";
             program = "${packages.jman-bench}/bin/jman-bench";
           };
-        });
+        }
+      );
 
-      devShells = forAllSys (pkgs:
+      devShells = forAllSys (
+        pkgs:
         let
           packages = packageSet pkgs;
           fixtureDeps = import ./nix/java-deps.nix { inherit pkgs; };
           jdk = pkgs.jdk21;
           jdtls = pkgs.jdt-language-server;
-        in {
+        in
+        {
           default = pkgs.mkShell {
-            packages = [ pkgs.go jdk pkgs.python3 pkgs.gradle pkgs.git jdtls packages.jman ];
+            packages = [
+              pkgs.go
+              jdk
+              pkgs.python3
+              pkgs.gradle
+              pkgs.git
+              jdtls
+              packages.jman
+            ];
             JMAN_JDTLS = "${jdtls}/bin/jdtls";
             JMAN_JDTLS_HOME = "${jdtls}/share/java/jdtls";
             JMAN_LOMBOK_AGENT = "${packages.lombokAgent}";
@@ -62,16 +80,26 @@
             JMAN_FIXTURE_DEPS = "${fixtureDeps}";
             JAVA_HOME = "${jdk}";
           };
-        });
+        }
+      );
 
-      checks = forAllSys (pkgs:
+      checks = forAllSys (
+        pkgs:
         let
           packages = packageSet pkgs;
           jdk = pkgs.jdk21;
           common = {
-            nativeBuildInputs = [ pkgs.python3 pkgs.git pkgs.bash jdk pkgs.gradle packages.jman ];
+            nativeBuildInputs = [
+              pkgs.python3
+              pkgs.git
+              pkgs.bash
+              jdk
+              pkgs.gradle
+              packages.jman
+            ];
           };
-        in {
+        in
+        {
           unit = packages.jman;
           benchmark = pkgs.runCommand "jman-benchmark-check" common ''
             export HOME=$TMPDIR/home
@@ -79,33 +107,45 @@
             python3 ${self}/tests/bench_test.py ${packages.jman}/bin/jman
             touch $out
           '';
-          integration = pkgs.runCommand "jman-jdtls-integration" (common // {
-            JMAN_FIXTURE_DEPS = "${import ./nix/java-deps.nix { inherit pkgs; }}";
-          }) ''
-            export HOME=$TMPDIR/home
-            mkdir -p "$HOME"
-            python3 ${self}/tests/integration.py ${packages.jman}/bin/jman
-            touch $out
-          '';
-        });
+          integration =
+            pkgs.runCommand "jman-jdtls-integration"
+              (
+                common
+                // {
+                  JMAN_FIXTURE_DEPS = "${import ./nix/java-deps.nix { inherit pkgs; }}";
+                }
+              )
+              ''
+                export HOME=$TMPDIR/home
+                mkdir -p "$HOME"
+                python3 ${self}/tests/integration.py ${packages.jman}/bin/jman
+                touch $out
+              '';
+        }
+      );
 
       overlays = {
-        default = final: prev:
+        default =
+          final: prev:
           let
             lombokAgent = final.callPackage ./nix/packages/lombok-agent/package.nix { };
             extension = final.callPackage ./nix/packages/extension/package.nix { };
             jman = final.callPackage ./nix/packages/jman/package.nix {
               inherit extension lombokAgent;
             };
-          in {
+          in
+          {
             inherit jman lombokAgent;
             jman-jdt-extension = extension;
             jman-bench = final.callPackage ./nix/packages/bench/package.nix { inherit jman; };
           };
 
-        pinned = final: prev:
-          let packages = self.packages.${final.stdenv.hostPlatform.system};
-          in {
+        pinned =
+          final: prev:
+          let
+            packages = self.packages.${final.stdenv.hostPlatform.system};
+          in
+          {
             jman = packages.jman;
             jman-jdt-extension = packages.extension;
             jman-bench = packages.jman-bench;
@@ -113,7 +153,13 @@
           };
       };
 
-      homeManagerModules.default = { config, lib, pkgs, ... }:
+      homeManagerModules.default =
+        {
+          config,
+          lib,
+          pkgs,
+          ...
+        }:
         import ./nix/modules/home-manager.nix {
           inherit config lib pkgs;
           jman = self.packages.${pkgs.stdenv.hostPlatform.system}.jman;

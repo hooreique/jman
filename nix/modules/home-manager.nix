@@ -1,4 +1,10 @@
-{ jman, config, lib, pkgs, ... }:
+{
+  jman,
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   options.services.jman = {
     enable = lib.mkEnableOption "jman Java language service";
@@ -13,7 +19,9 @@
   };
 
   config = lib.mkIf config.services.jman.enable (
-    { home.packages = [ config.services.jman.package ]; }
+    {
+      home.packages = [ config.services.jman.package ];
+    }
     // lib.optionalAttrs pkgs.stdenv.isLinux {
       systemd.user.services.jman = {
         Unit.Description = "jman Java language service";
