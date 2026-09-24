@@ -14,7 +14,7 @@
     };
     maxSessions = lib.mkOption {
       type = lib.types.ints.positive;
-      default = 2;
+      default = 5;
     };
   };
 

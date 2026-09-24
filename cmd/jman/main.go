@@ -64,7 +64,7 @@ func run(args []string) int {
 	args = args[1:]
 	if command == "daemon" {
 		flags := flag.NewFlagSet(command, flag.ContinueOnError)
-		n := flags.Int("max-sessions", 2, "maximum active JDTLS sessions")
+		n := flags.Int("max-sessions", 5, "maximum active JDTLS sessions")
 		if e := flags.Parse(args); e != nil {
 			return fail(e)
 		}
