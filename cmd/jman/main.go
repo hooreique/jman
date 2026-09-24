@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jman-dev/jman/internal/jman"
+	"github.com/hooreique/jman/internal/jman"
 )
 
 const help = `jman — build-aware Java navigation

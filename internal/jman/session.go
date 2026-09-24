@@ -14,7 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jman-dev/jman/internal/lsp"
+	"github.com/hooreique/jman/internal/lsp"
 )
 
 type Config struct {

@@ -35,7 +35,7 @@ buildGoModule {
 
   meta = {
     description = "Build-aware Java symbol navigation for AI agents";
-    homepage = "https://github.com/jman-dev/jman";
+    homepage = "https://github.com/hooreique/jman";
     license = lib.licenses.mit;
     mainProgram = "jman";
   };
