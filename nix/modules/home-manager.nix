@@ -5,6 +5,15 @@
   pkgs,
   ...
 }:
+let
+  cfg = config.services.jman;
+  daemonArguments = [
+    "${cfg.package}/bin/jman"
+    "daemon"
+    "--max-sessions"
+    (toString cfg.maxSessions)
+  ];
+in
 {
   options.services.jman = {
     enable = lib.mkEnableOption "jman Java language service";
@@ -18,18 +27,29 @@
     };
   };
 
-  config = lib.mkIf config.services.jman.enable (
+  config = lib.mkIf cfg.enable (
     {
-      home.packages = [ config.services.jman.package ];
+      home.packages = [ cfg.package ];
     }
-    // lib.optionalAttrs pkgs.stdenv.isLinux {
+    // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
       systemd.user.services.jman = {
         Unit.Description = "jman Java language service";
         Service = {
-          ExecStart = "${config.services.jman.package}/bin/jman daemon --max-sessions ${toString config.services.jman.maxSessions}";
+          ExecStart = lib.escapeShellArgs daemonArguments;
           Restart = "on-failure";
         };
         Install.WantedBy = [ "default.target" ];
+      };
+    }
+    // lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
+      launchd.agents.jman = {
+        enable = true;
+        config = {
+          ProgramArguments = daemonArguments;
+          ProcessType = "Background";
+          RunAtLoad = true;
+          KeepAlive.SuccessfulExit = false;
+        };
       };
     }
   );

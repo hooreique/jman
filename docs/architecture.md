@@ -70,7 +70,7 @@ The daemon uses bounded queues, request deadlines, cancellation, idle eviction, 
 
 The flake exposes `jman`, `jman-bench`, the JDTLS extension, apps, a development shell, checks, overlays, and a Home Manager module. `overlays.default` rebuilds with the caller's nixpkgs; `overlays.pinned` exposes this flake's fixed packages.
 
-Packages are evaluated for `aarch64-darwin`, `aarch64-linux`, and `x86_64-linux`. Real integration validation currently runs on `x86_64-linux`; the other systems receive flake evaluation. Home Manager installs a systemd user service on Linux; Darwin users run the daemon directly.
+Packages are evaluated for `aarch64-darwin`, `aarch64-linux`, and `x86_64-linux`. Real integration validation currently runs on `x86_64-linux`; the other systems receive flake evaluation. Home Manager installs a systemd user service on Linux and a launchd agent on Darwin.
 
 Nix fixes the JDTLS runtime and fixture closure. Real user dependency resolution still runs through the user's Gradle environment, and mutable workspace data stays outside the Nix store.
 
