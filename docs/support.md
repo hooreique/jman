@@ -17,6 +17,24 @@ This document defines shipped behavior for 0.1. Product goals live in [requireme
 
 Content fingerprints favor correctness over speed. They can be expensive in large workspaces. The default two-session limit and JVM heap setting are not a process-wide RSS limit.
 
+## Cache paths and cleanup
+
+All supported platforms, including macOS, use these priorities (empty variables are ignored):
+
+- Cache: `JMAN_CACHE_HOME` → `$XDG_CACHE_HOME/jman` → `$HOME/.cache/jman`; without a home directory, `<system temp>/jman`.
+- Socket: `JMAN_SOCKET` → `$XDG_RUNTIME_DIR/jman.sock` → `<cache>/run/jman.sock`.
+
+Use the same environment for the daemon and CLI. To clear the default cache, stop any Home Manager service first, then run:
+
+```sh
+jman stop
+rm -rf ~/.cache/jman
+```
+
+If overridden, remove the configured cache instead. This leaves Gradle caches and runtime files outside that directory untouched.
+
+On macOS, stop the old daemon before upgrading. The previous `~/Library/Caches/jman` cache is not migrated or deleted automatically; remove it manually when no longer needed.
+
 ## What results mean
 
 - Selecting a binary does not prove that an attached sources JAR came from the same build.

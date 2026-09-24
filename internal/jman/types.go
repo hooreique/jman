@@ -82,11 +82,14 @@ func CacheDir() string {
 	if s := os.Getenv("JMAN_CACHE_HOME"); s != "" {
 		return s
 	}
-	p, e := os.UserCacheDir()
-	if e != nil {
-		p = os.TempDir()
+	if p := os.Getenv("XDG_CACHE_HOME"); p != "" {
+		return filepath.Join(p, "jman")
 	}
-	return filepath.Join(p, "jman")
+	p, e := os.UserHomeDir()
+	if e != nil {
+		return filepath.Join(os.TempDir(), "jman")
+	}
+	return filepath.Join(p, ".cache", "jman")
 }
 func SocketPath() string {
 	if s := os.Getenv("JMAN_SOCKET"); s != "" {
