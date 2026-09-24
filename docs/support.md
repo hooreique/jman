@@ -73,12 +73,12 @@ An `--adapter-command` reads JSON from `JMAN_BENCH_INPUT`:
 ```json
 {
   "schemaVersion": 1,
-  "project": "/run/workspace/commerce",
+  "project": "<absolute-project-path>",
   "prompt": "...",
   "deadlineSeconds": 600,
   "maxTokens": 200000,
   "model": "model-id",
-  "output": "/run/adapter-result.json"
+  "output": "<output-json-path>"
 }
 ```
 

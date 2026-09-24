@@ -37,4 +37,4 @@ Independent evaluator: **baseline 3/3; jman 2/3**.
 
 ## Limits
 
-The failed jman run remains in totals. This is one task with three repetitions, not a general Java or model result. OpenCode reported zero step cost, so currency cost was not calculated. Raw JSONL and aggregate data were kept under `/tmp/opencode/jman-additional-real/` and are not committed.
+The failed jman run remains in totals. This is one task with three repetitions, not a general Java or model result. OpenCode reported zero step cost, so currency cost was not calculated.

@@ -37,4 +37,4 @@ Independent evaluator: **baseline 3/3; jman 3/3**.
 
 ## Limits
 
-All runs passed, but this is one task with three repetitions. It does not establish general performance. OpenCode reported zero step cost; no currency cost was calculated. Raw JSONL and aggregate data remain outside the repository at `/tmp/opencode/jman-additional-real/`.
+All runs passed, but this is one task with three repetitions. It does not establish general performance. OpenCode reported zero step cost; no currency cost was calculated.

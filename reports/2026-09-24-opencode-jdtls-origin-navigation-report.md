@@ -40,8 +40,6 @@ Independent evaluator: **baseline 3/3; jman 3/3**.
 
 ## Interpretation and limits
 
-In the first baseline run, the agent opened JAR sources and searched `/nix/store` for Java and Gradle locations. The jman arm obtained `com.acme:shared-text:2.4.1`, a source excerpt, and compile-classpath context from one definition query.
+In the first baseline run, the agent opened JAR sources and searched Java and Gradle locations. The jman arm obtained `com.acme:shared-text:2.4.1`, a source excerpt, and compile-classpath context from one definition query.
 
 The aggregate favors jman for non-cache tokens and wall time, but trial 3 used more reported tokens with jman. This single task and three repetitions do not establish a general benefit. OpenCode reported zero step cost, so no currency cost is calculated.
-
-Raw JSONL and aggregate data were kept at `/tmp/opencode/jman-real/three-trial-report.json` and `/tmp/opencode/jman-real/evaluation.json` during the run. They are not committed; reproduce with `jman-bench` rather than relying on temporary paths.

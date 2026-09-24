@@ -41,4 +41,4 @@ The evaluator ran `:app:testClasses` and required `equals("ADMIN")` in the repai
 
 ## Limits
 
-All failures remain in the totals. This is one task with three repetitions, not a general Java or model result. OpenCode reported zero step cost, so currency cost was not calculated. Raw JSONL and aggregate data were kept under `/tmp/opencode/jman-additional-real/` and are not committed.
+All failures remain in the totals. This is one task with three repetitions, not a general Java or model result. OpenCode reported zero step cost, so currency cost was not calculated.
