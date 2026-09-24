@@ -16,6 +16,19 @@ nix build
 nix run . -- definition path/to/File.java:42 --symbol normalize
 ```
 
+다른 flake에서는 다음 overlay를 사용할 수 있다.
+
+```nix
+inputs.jman.url = "github:jman-dev/jman";
+
+# caller의 nixpkgs/JDK 조합으로 다시 빌드
+overlays = [ inputs.jman.overlays.default ];
+# 또는 jman의 고정된 flake package 사용
+# overlays = [ inputs.jman.overlays.pinned ];
+```
+
+두 경우 모두 `pkgs.jman`과 `pkgs.jman-bench`를 제공한다. package와 app, dev shell은 `aarch64-darwin`, `aarch64-linux`, `x86_64-linux`에서 제공한다.
+
 프로젝트 디렉터리에서 다음 명령을 사용한다. 첫 요청이 user-scoped daemon과 해당 build의 JDTLS를 시작한다.
 
 ```sh
