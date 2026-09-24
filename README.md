@@ -14,6 +14,9 @@ nix build .#jman
 
 # Run without installing from a Gradle project.
 nix run . -- definition src/main/java/example/OrderService.java:42 --symbol normalize
+
+# Or run the published version directly, without installing.
+nix run github:hooreique/jman -- definition src/main/java/example/OrderService.java:42 --symbol normalize
 ```
 
 The first request starts a local daemon and a JDTLS session for the Gradle build.
