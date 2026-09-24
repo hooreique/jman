@@ -21,6 +21,59 @@ nix run github:hooreique/jman -- definition src/main/java/example/OrderService.j
 
 The first request starts a local daemon and a JDTLS session for the Gradle build.
 
+## Home Manager
+
+Import the flake's `homeManagerModules.default` module in a Home Manager
+configuration. Make `jman` available as `pkgs.jman` first; this example uses the
+provided pinned overlay. The module installs it and starts its daemon as a
+LaunchAgent on Darwin or a systemd user service on Linux.
+
+```nix
+# flake.nix
+{
+  inputs = {
+    # ...
+    jman.url = "github:hooreique/jman";
+  };
+
+  outputs = { nixpkgs, home-manager, jman, ... }: {
+    # Apple Silicon macOS
+    homeConfigurations."alice-darwin" = home-manager.lib.homeManagerConfiguration {
+      pkgs = import nixpkgs {
+        system = "aarch64-darwin";
+        overlays = [ jman.overlays.pinned ];
+      };
+      modules = [
+        # ...
+        jman.homeManagerModules.default
+        {
+          services.jman.enable = true;
+        }
+      ];
+    };
+
+    # x86_64 Linux
+    homeConfigurations."alice-linux" = home-manager.lib.homeManagerConfiguration {
+      pkgs = import nixpkgs {
+        system = "x86_64-linux";
+        overlays = [ jman.overlays.pinned ];
+      };
+      modules = [
+        # ...
+        jman.homeManagerModules.default
+        {
+          services.jman.enable = true;
+        }
+      ];
+    };
+  };
+}
+```
+
+Add your normal Home Manager configuration at `# ...`, then activate the matching
+configuration with `home-manager switch --flake .#alice-darwin` or
+`home-manager switch --flake .#alice-linux`.
+
 ## Use
 
 Run commands from a Gradle build root or a descendant.

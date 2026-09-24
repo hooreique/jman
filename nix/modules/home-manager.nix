@@ -1,5 +1,4 @@
 {
-  jman,
   config,
   lib,
   pkgs,
@@ -19,7 +18,7 @@ in
     enable = lib.mkEnableOption "jman Java language service";
     package = lib.mkOption {
       type = lib.types.package;
-      default = jman;
+      default = pkgs.jman;
     };
     maxSessions = lib.mkOption {
       type = lib.types.ints.positive;
