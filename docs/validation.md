@@ -1,8 +1,8 @@
-# 검증 기록
+# Validation record
 
-2026-09-24, `x86_64-linux`. 재현에 필요한 버전은 `flake.lock`과 Nix artifact hash로 고정한다.
+Last updated: 2026-09-24. Runtime versions and fixture artifacts are fixed by `flake.lock` and Nix hashes.
 
-## 실행 검사
+## Repeatable checks
 
 ```sh
 nix develop --command go test -race ./...
@@ -11,42 +11,34 @@ nix flake check -L
 nix build .#jman .#jman-bench
 ```
 
-실제 JDTLS 통합 검사는 mock language server가 아니라 JDTLS 1.60.0, Java 21, Gradle 8.14.4와 Java extension을 실행한다. fixture 의존성은 Nix로 고정하고 Gradle은 offline 모드에서 사용한다.
+The integration suite runs JDTLS 1.60.0, Java 21, Gradle 8.14.4, and the jman Java extension. Gradle runs offline against Nix-fixed fixture dependencies.
 
-### 탐색 및 빌드 모델
+It verifies:
 
-- 같은 FQN의 오래된 소스가 있어도 실제 JAR의 구현과 digest 선택.
-- 의미 기반 references가 과거 선언을 섞지 않음.
-- 디스크 수정 뒤 snapshot 갱신과 독립 javac/runtime evaluator 통과.
-- 소스 추가/삭제, 페이지 분할, 오래된 cursor 거부.
-- 선언 버전과 Gradle constraint가 선택한 버전의 차이.
-- test source set의 `testCompileClasspath` 문맥.
-- 별도 저장소의 composite build substitution을 실제 소스로 연결.
-- sources JAR이 없으면 원본 소스로 표시하지 않음.
-- 동일 Git 저장소의 별도 worktree를 서로 다른 session으로 취급.
+- selected JAR binding over a stale same-FQN source;
+- semantic references, disk edits, add/delete updates, pagination, and stale-cursor rejection;
+- Gradle version constraints, test source sets, composite substitution, missing sources, and separate Git worktrees;
+- Lombok getter/builder bindings, MapStruct implementations, QueryDSL generated types, and Spring AOP self-invocation;
+- benchmark isolation, custom suites, evaluator timeouts, missing usage, and provider usage accounting.
 
-### 사용 기술스택
+The Spring fixture proves runtime behavior; it does not make static references a proxy-runtime analyzer.
 
-- Lombok 1.18.48 agent를 통한 getter/builder 해석과 생성 멤버 표시.
-- MapStruct 1.6.3 구현 생성, 구현 탐색, 실제 mapping 결과.
-- QueryDSL 5.1.0 + Jakarta Persistence의 Q 타입 생성과 필드 탐색.
-- Spring 6.2.3 context, proxy advice, self-invocation 시 advice 우회의 실제 실행.
+## Observed agent trials
 
-Spring 실행 검사는 정적 references가 runtime proxy 경로를 전부 해석한다는 의미가 아니다.
+Real OpenCode trials used `openai/gpt-5.6-terra`, three repetitions per arm, and independent evaluators. They are small, task-specific observations, not general performance claims.
 
-### 벤치마크 실행기
+| Trial | Baseline | jman | Report |
+|---|---:|---:|---|
+| Origin navigation | 3/3 | 3/3 | [report](../reports/2026-09-24-opencode-jdtls-origin-navigation-report.md) |
+| Test/main classpath split | 0/3 | 3/3 | [report](../reports/2026-09-24-test-main-classpath-split-report.md) |
+| Dependency version conflict | 3/3 | 3/3 | [report](../reports/2026-09-24-dependency-version-conflict-report.md) |
+| Composite build substitution | 3/3 | 2/3 | [report](../reports/2026-09-24-composite-build-substitution-report.md) |
+| Lombok generated member | 3/3 | 3/3 | [report](../reports/2026-09-24-lombok-generated-member-report.md) |
+| MapStruct generated implementation | 3/3 | 3/3 | [report](../reports/2026-09-24-mapstruct-generated-implementation-report.md) |
 
-- baseline/jman 두 실험군의 fresh repository, 실행 결과, 독립 평가, report 생성.
-- 사용자 suite template과 외부 평가 명령 연결.
-- provider usage가 없을 때 0으로 취급하지 않음.
-- mock HTTP provider를 이용한 tool-call round trip과 cache/reasoning 중복 합산 방지.
-- 합성 smoke 결과에는 `evidenceKind: synthetic-smoke` 표시.
+OpenCode reported zero monetary cost in these trials. Reports therefore show tokens and wall time, not currency cost. Raw event paths are documented in each report and are not committed.
 
-## 실제 AI 경제성 측정 상태
-
-실제 모델을 사용한 내부 라이브러리 출처 탐색의 3회 paired trial을 수행했다. 모델, OpenCode 버전, 방법, token·시간 결과와 한계는 [OpenCode JDTLS Origin Navigation Trial](../reports/2026-09-24-opencode-jdtls-origin-navigation-report.md)을 참고한다. mock provider와 scripted adapter 결과는 여전히 실행기 검증에만 사용한다.
-
-실험을 재개하는 명령:
+## Run another trial
 
 ```sh
 OPENAI_API_KEY=... nix run .#bench -- run \
@@ -56,4 +48,4 @@ OPENAI_API_KEY=... nix run .#bench -- run \
   --cache dependency-warm
 ```
 
-다른 provider/harness는 `--base-url`, `--api-key-env`, `--adapter-command`로 연결한다. cold와 jdtls-warm 실험도 별도 디렉터리에서 반복하고 원본 events와 실패 실행을 함께 보존한다.
+Use `--base-url`, `--api-key-env`, or `--adapter-command` for another provider or harness. Run cold and warm modes separately and retain failed runs with raw events.
