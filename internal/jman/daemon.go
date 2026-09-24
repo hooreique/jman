@@ -107,6 +107,9 @@ func (m *manager) serve(w http.ResponseWriter, req *http.Request) {
 			response.Results = append(response.Results, Result{Name: s.root, Detail: s.status()})
 		}
 		m.mu.Unlock()
+		if len(response.Results) == 0 {
+			response.Results = append(response.Results, Result{Name: "daemon running (no active workspace sessions)"})
+		}
 	} else {
 		root, e := Canonical(q.Project)
 		if e != nil {
@@ -210,7 +213,18 @@ func Client(ctx context.Context, q Request) (Response, error) {
 		return nil
 	}
 	if e := ping(); e != nil {
-		if q.Command == "status" || q.Command == "stop" {
+		if q.Command == "status" {
+			response := reply(q)
+			response.Results = append(response.Results, Result{
+				Name: "daemon not running",
+				Detail: map[string]string{
+					"socket":     socket,
+					"nextAction": "run `jman daemon` to start it; optionally configure jman with Home Manager for a persistent daemon (https://github.com/hooreique/jman#readme)",
+				},
+			})
+			return response, nil
+		}
+		if q.Command == "stop" {
 			return reply(q), nil
 		}
 		if e = os.MkdirAll(filepath.Dir(socket), 0700); e != nil {
