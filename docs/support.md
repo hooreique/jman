@@ -19,26 +19,21 @@ Content fingerprints favor correctness over speed. They can be expensive in larg
 
 ## Cache paths and cleanup
 
-On all supported platforms, including macOS, jman chooses its cache directory from the first nonempty setting:
+All supported platforms, including macOS, use these priorities (empty variables are ignored):
 
-1. `JMAN_CACHE_HOME` (used directly).
-2. `$XDG_CACHE_HOME/jman`.
-3. `$HOME/.cache/jman`.
+- Cache: `JMAN_CACHE_HOME` → `$XDG_CACHE_HOME/jman` → `$HOME/.cache/jman`; without a home directory, `<system temp>/jman`.
+- Socket: `JMAN_SOCKET` → `$XDG_RUNTIME_DIR/jman.sock` → `<cache>/run/jman.sock`.
 
-If the home directory is unavailable, jman falls back to `jman` under the system temporary directory. Build models, JDTLS workspaces, and extracted external sources share this cache directory.
-
-The socket path is `JMAN_SOCKET` when nonempty, then `$XDG_RUNTIME_DIR/jman.sock`, then `<cache>/run/jman.sock`. The socket lock and lazily started daemon's log are stored alongside the socket. Use the same environment settings for the daemon and CLI.
-
-Stop the daemon before removing caches. For a Home Manager service, stop its systemd user service or LaunchAgent first so it does not restart automatically. With default cache settings:
+Use the same environment for the daemon and CLI. To clear the default cache, stop any Home Manager service first, then run:
 
 ```sh
 jman stop
 rm -rf ~/.cache/jman
 ```
 
-When a cache override is set, remove that cache directory instead. Socket, lock, and log files outside the cache directory are not removed by this command; the daemon removes its socket on shutdown. Gradle's own caches are separate.
+If overridden, remove the configured cache instead. This leaves Gradle caches and runtime files outside that directory untouched.
 
-Earlier macOS versions used `~/Library/Caches/jman` by default. Stop the old daemon before upgrading; caches are rebuilt at the new location without automatic migration or deletion. After stopping the old daemon, the old cache directory can be removed manually. To keep using it, set `JMAN_CACHE_HOME` to its absolute path for both the daemon and CLI.
+On macOS, stop the old daemon before upgrading. The previous `~/Library/Caches/jman` cache is not migrated or deleted automatically; remove it manually when no longer needed.
 
 ## What results mean
 
