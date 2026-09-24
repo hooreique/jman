@@ -1,5 +1,6 @@
 {
   stdenvNoCC,
+  lib,
   jdk21,
   jdt-language-server,
   jmanSrc ? ../../..,
@@ -25,4 +26,9 @@ stdenvNoCC.mkDerivation {
     install -Dm444 jman-jdt.jar "$out/share/java/jman-jdt.jar"
     runHook postInstall
   '';
+
+  meta = {
+    description = "JDTLS provenance extension for jman";
+    license = lib.licenses.mit;
+  };
 }

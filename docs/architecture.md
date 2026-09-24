@@ -116,7 +116,7 @@ package, app, dev shell은 `aarch64-darwin`, `aarch64-linux`, `x86_64-linux`에�
 
 flake, `jman definition/read/status/doctor/prepare`, 최소 daemon/session, skill, 내부 JAR 착각 benchmark 한 문제와 두 실험군 실행을 끝까지 연결한다.
 
-통과 조건 중 binding/worktree/독립 evaluator는 충족했다. 실제 모델 API 인증 또는 외부 adapter가 없어 경제성 raw report는 아직 생성하지 않았으며, 합성 adapter smoke 결과를 경제성 증거로 사용하지 않는다.
+binding/worktree/독립 evaluator를 충족했고, 실제 모델을 사용한 3회 paired trial도 수행했다. 해당 trial의 방법·결과·원본 event 보존 한계는 [trial report](../reports/2026-09-24-opencode-jdtls-origin-navigation-report.md)에 기록했다. 합성 adapter smoke 결과는 여전히 경제성 증거로 사용하지 않는다.
 
 ### 대부분 완료: 단계 2 — 첫 제품 요구사항
 

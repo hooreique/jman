@@ -1,63 +1,88 @@
-# jman — JDTLS Manager
+# jman
 
-Java 개발자를 돕는 AI agent가 **현재 호출 지점의 실제 정의와 참조**를 적은 탐색 비용으로 확인하도록 돕는 도구.
+**빌드가 실제로 선택한 Java 심볼을 AI agent와 개발자에게 보여 주는 JDTLS manager.**
 
-주요 대상은 Gradle multi-project / multi-repository 환경과 Spring, Lombok, JPA, QueryDSL, MapStruct를 사용하는 프로젝트다. 특히 현재 classpath의 내부 라이브러리와 저장소에 남아 있는 오래된 동명 코드를 구별하는 것을 우선한다.
+`jman`은 호출 위치의 JDT binding과 Gradle의 선택 classpath를 함께 사용한다. 그래서 Gradle multi-project / composite build / 여러 repository 환경에서, 저장소에 남아 있는 오래된 동명 소스가 아니라 **실제로 호출되는 artifact 또는 project source**를 찾는다.
 
-## 설치와 시작
+주요 대상은 Spring, Lombok, JPA, QueryDSL, MapStruct를 사용하는 Java/Gradle 프로젝트다.
 
-현재 패키징 대상은 `x86_64-linux`다. Nix가 JDK, JDTLS, Lombok agent와 jman extension의 버전을 함께 고정한다.
+> 현재 릴리스: **0.1.0** — 지원 기능과 한계는 [지원 범위](docs/support.md)를 기준으로 한다.
+
+## 빠른 시작
+
+Nix flake는 `aarch64-darwin`, `aarch64-linux`, `x86_64-linux`를 제공한다. JDK 21, JDTLS, Lombok agent, Java extension, Gradle을 호환되는 조합으로 고정한다.
 
 ```sh
-nix build
+# 빌드 후 실행
+nix build .#jman
 ./result/bin/jman --help
 
-# 또는 설치 없이 실행
-nix run . -- definition path/to/File.java:42 --symbol normalize
+# 설치 없이 현재 프로젝트에서 실행
+nix run . -- definition src/main/java/example/OrderService.java:42 --symbol normalize
 ```
 
-다른 flake에서는 다음 overlay를 사용할 수 있다.
+프로젝트 root 또는 그 하위에서 실행한다. 첫 요청이 local daemon과 해당 Gradle build의 JDTLS session을 시작한다.
+
+```sh
+jman definition src/main/java/example/OrderService.java:42 --symbol normalize
+jman references src/main/java/example/OrderService.java:42 --symbol normalize
+jman implementations src/main/java/example/OrderMapper.java:12 --symbol toDto
+jman hover src/main/java/example/OrderService.java:42 --symbol normalize
+jman deps src/main/java/example/OrderService.java
+```
+
+정의 결과에는 해석된 signature, source set, 선택 artifact/version, binary SHA-256, source origin, 짧은 excerpt가 포함된다.
+
+```sh
+# 사람이 읽는 상세 provenance
+jman definition src/main/java/example/OrderService.java:42 --symbol normalize --explain
+
+# schemaVersion 1 구조화 출력
+jman definition src/main/java/example/OrderService.java:42 --symbol normalize --json
+
+# 반환된 source 경로를 더 읽기
+jman read /path/from/definition/Source.java --lines 20:60
+```
+
+위치의 줄·열은 1부터 시작하며 열은 Unicode code point 기준이다. 같은 줄에 같은 식별자가 반복되면 `--occurrence N` 또는 정확한 열을 지정한다. jman은 위치 없이 이름만 검색해 정의를 추측하지 않는다.
+
+## 명령과 운영
+
+| 명령 | 역할 |
+|---|---|
+| `definition`, `references`, `implementations`, `hover` | JDT binding 기반 탐색 |
+| `deps` | 호출 파일 source set의 Gradle 선택 dependency context |
+| `read PATH --lines START:END` | workspace, generated, cached external source 읽기 |
+| `prepare [--generate]` | import/index warming; 설정된 generation task는 `--generate`에서만 실행 |
+| `refresh` | build/dependency 변경 뒤 재import |
+| `doctor` | import, classpath, processor diagnostics |
+| `status`, `stop` | local daemon session 확인·종료 |
+| `skill install --target DIR` | 배포 skill 설치 |
+
+공통 옵션은 `--project PATH`, `--symbol NAME`, `--occurrence N`, `--limit N`, `--max-bytes N`, `--cursor TOKEN`, `--timeout 120s`, `--json`, `--explain`이다. 전체 옵션은 `jman --help`가 authoritative하다.
+
+기본 daemon은 최대 2개 JDTLS session을 유지하며 15분 idle session을 종료한다. session의 JVM heap 상한은 1536 MiB다. socket/cache를 격리하려면 `JMAN_SOCKET`, `JMAN_CACHE_HOME`을 사용한다.
+
+Home Manager에서는 `homeManagerModules.default`를 import한 뒤 다음처럼 설정할 수 있다.
 
 ```nix
-inputs.jman.url = "github:jman-dev/jman";
-
-# caller의 nixpkgs/JDK 조합으로 다시 빌드
-overlays = [ inputs.jman.overlays.default ];
-# 또는 jman의 고정된 flake package 사용
-# overlays = [ inputs.jman.overlays.pinned ];
+services.jman = {
+  enable = true;
+  maxSessions = 2;
+};
 ```
 
-두 경우 모두 `pkgs.jman`과 `pkgs.jman-bench`를 제공한다. package와 app, dev shell은 `aarch64-darwin`, `aarch64-linux`, `x86_64-linux`에서 제공한다.
+다른 flake에서 `overlays.default`는 caller의 nixpkgs로 `pkgs.jman`과 `pkgs.jman-bench`를 빌드하고, `overlays.pinned`는 이 flake가 고정한 package를 노출한다.
 
-프로젝트 디렉터리에서 다음 명령을 사용한다. 첫 요청이 user-scoped daemon과 해당 build의 JDTLS를 시작한다.
+## 프로젝트 설정
 
-```sh
-jman definition app/src/main/java/example/OrderService.java:42 --symbol normalize
-jman references app/src/main/java/example/OrderService.java:42 --symbol normalize
-jman doctor
-jman status
-jman stop
-```
-
-결과에는 실제 binding의 시그니처, 선택된 Gradle artifact, source set, binary SHA-256, 짧은 소스가 포함된다. `--json`으로 구조화 응답, `--explain`으로 자세한 텍스트를 얻는다. 외부 소스도 반환된 캐시 경로에서 읽을 수 있다.
-
-```sh
-jman read /path/from/definition/Source.java --lines 20:60
-jman references path/to/File.java:42 --symbol normalize --limit 10
-jman implementations path/to/Mapper.java:7 --symbol toDto
-jman hover path/to/File.java:42 --symbol normalize
-jman deps path/to/File.java
-```
-
-`--symbol`은 지정한 줄의 토큰을 선택한다. 같은 줄에 여러 번 나오면 `--occurrence 2`로 선택한다. 줄/열은 1부터 시작하고 열 단위는 Unicode code point다. 위치 없이 이름만으로 정의를 추측하지 않는다.
-
-### 프로젝트 설정
-
-기본적으로 Gradle wrapper와 build root를 찾는다. 명시적으로 지정하려면 `--project /path/to/build`를 사용한다. 선택 설정은 build root의 `.jman.json`에 둔다.
+build root는 Gradle settings/build 파일에서 자동 발견한다. 모호하거나 별도 root를 사용할 때 `--project /path/to/build`를 지정한다. 선택 설정은 build root의 `.jman.json`에 둔다.
 
 ```json
 {
   "offline": false,
+  "javaHome": "/path/to/jdk21",
+  "gradleJavaHome": "/path/to/jdk17-or-21",
   "generateTasks": [":app:compileJava"],
   "settings": {
     "java": {
@@ -69,88 +94,76 @@ jman deps path/to/File.java
 }
 ```
 
-- `javaHome`: JDTLS 실행 JDK. 기본은 패키지의 JDK 21.
-- `gradleJavaHome`: Gradle 실행 JDK. project toolchain과 별개다.
-- `gradleHome`: wrapper가 없을 때 사용할 Gradle 설치 경로.
-- `settings`: JDTLS에 전달할 중첩 Java 설정.
-- `jman prepare --generate`: 설정한 생성 task를 실행한 뒤 import한다.
-- `jman refresh`: 의존성 재해석과 JDTLS 재시작.
+- `javaHome`: JDTLS 실행 JDK. package 기본값은 JDK 21이다.
+- `gradleJavaHome`: Gradle 실행 JDK이며 project toolchain과는 별개다.
+- `gradleHome`: wrapper가 없을 때 사용할 Gradle 설치 root다.
+- `generateTasks`: `jman prepare --generate`가 실행할 명시적 task 목록이다.
+- `settings`: JDTLS에 전달하는 중첩 Java 설정이다.
 
-Lombok의 getter/builder는 생성 멤버로 표시하고 원본 필드/타입 위치로 안내한다. MapStruct와 QueryDSL은 Gradle annotation processing과 생성 소스 경로를 사용한다. `doctor`에서 import/compile 오류를 확인할 수 있다.
+Lombok 생성 getter/builder는 생성 멤버로 표시하고 소유 타입/필드 쪽으로 안내한다. MapStruct와 QueryDSL은 Gradle annotation processing이 만든 source를 탐색한다.
 
-### Skill 설치
+## Agent skill
 
-사용하는 에이전트가 읽는 skill 디렉터리를 지정한다.
+agent가 읽는 skill directory에 배포 skill을 설치한다. 기존 내용이 다르면 덮어쓰지 않는다.
 
 ```sh
 jman skill install --target /path/to/agent/skills/jman
 ```
 
-설치된 문서가 다르면 덮어쓰지 않는다. daemon 관리를 skill에 넣을 필요는 없다.
+## 정확성 경계
 
-### 상주 서비스
+- 기본 의미는 compile-time binding이며, references는 현재 JDTLS가 import한 workspace의 정적 Java 참조다.
+- 인접 repository의 HEAD를 dependency JAR source로 자동 대체하지 않는다. Gradle composite substitution은 실제 build 관계를 따라간다.
+- sources JAR이 binary와 같은 build임을 증명하지 못할 때 source match를 `coordinate-only` 또는 `unverified`로 표시한다.
+- Spring runtime bean/proxy 선택, reflection, 동적 JPA query는 일반 Java references로 완전하게 결정되지 않는다.
+- import/build 문제가 있으면 `partial` 결과와 diagnostics를 반환한다. exit code `3`은 불완전하거나 아직 준비되지 않은 결과다.
 
-flake의 `homeManagerModules.default`를 import하고 `services.jman.enable = true;`로 설정한다. `services.jman.maxSessions`의 기본값은 2다. 직접 실행할 때는 `jman daemon --max-sessions 2`를 사용한다.
-
-session마다 JVM 최대 heap은 1536 MiB이며, 15분 idle session은 종료한다. 같은 workspace 요청은 직렬화하고 서로 다른 session은 병렬로 처리한다. socket과 캐시는 `JMAN_SOCKET`, `JMAN_CACHE_HOME`으로 격리할 수 있다.
+더 자세한 제공 범위, 종료 코드, benchmark suite/adapter 계약은 [지원 범위](docs/support.md)를 참고한다.
 
 ## 벤치마크
 
+`jman-bench`는 baseline과 jman arm을 fresh repository/session/cache에서 paired 실행하고, 종료 후 별도의 evaluator에서 허용된 수정만 적용해 판정한다.
+
 ```sh
-# 실제 독립 저장소들과 로컬 Maven repository 생성
+# bundled internal-library fixture와 local Maven repository 생성
 nix run .#bench -- fixture ./local/example
 
-# 원래 코드가 실패하고 기준 수정이 통과하는지 독립 실행 검사
+# fixture의 실패 상태와 reference fix 검증
 nix run .#bench -- validate --output ./local/oracle-check
 
-# 실제 모델을 사용하는 paired A/B 실행
+# OpenAI-compatible endpoint를 통한 실제 agent trial
 OPENAI_API_KEY=... nix run .#bench -- run \
-  --model YOUR_MODEL --output ./local/experiment \
-  --repetitions 5 --cache dependency-warm
+  --model YOUR_MODEL \
+  --output ./local/experiment \
+  --repetitions 5 \
+  --cache dependency-warm
 
 nix run .#bench -- report ./local/experiment
 ```
 
-OpenAI-compatible `/chat/completions` endpoint는 `--base-url`로 바꿀 수 있다. 다른 agent harness는 `--adapter-command`로 연결한다. 실행별 raw events, 수정 diff, 독립 평가 결과, JSON/Markdown report를 남긴다. `--prices rates.json`으로 input/output/cacheRead의 백만 토큰당 가격을 제공하면 추정 비용과 성공당 비용도 계산한다.
+`--base-url`과 `--api-key-env`로 OpenAI-compatible provider를 바꾸거나, `--adapter-command`로 별도 agent harness를 연결할 수 있다. 사용자 template, prompt, 허용 edit glob, 독립 evaluator는 `--suite suite.json`으로 제공한다. 형식은 [suite와 adapter 계약](docs/support.md#사용자-프로젝트와-문제)을 참고한다.
 
-사용자 Java 프로젝트와 문제는 `run --suite suite.json`으로 입력한다. template, 문제 문구, 허용된 수정 범위, 독립 평가 명령을 지정하는 형식은 [suite와 adapter 계약](docs/support.md#사용자-프로젝트와-문제)에 설명되어 있다.
+실제 모델로 수행한 제한된 3회 paired origin-navigation trial은 **baseline 3/3, jman 3/3 성공**이었고, 합계 non-cache token은 21.4%, wall time은 28.5% 낮았다. 단일 문제·작은 표본이므로 일반 성능 주장으로 해석해서는 안 된다. 방법과 원본 보존 한계는 [trial report](reports/2026-09-24-opencode-jdtls-origin-navigation-report.md)에 기록했다.
 
-현재 실험 suite의 에이전트 과제는 내부 라이브러리 오인 사례다. 별도의 통합 fixture는 Lombok, MapStruct, QueryDSL/JPA, Spring context와 AOP self-invocation을 검증한다. **합성 adapter smoke test는 AI 성능이나 token 절감의 증거가 아니다. 실제 모델로 수행한 제한된 반복 실험은 아래 리포트에서 확인할 수 있다.**
-
-실제 모델로 수행한 benchmark 리포트는 [`reports/`](reports/)에서 열람할 수 있다.
-
-## 개발과 검증
+## 개발·기여
 
 ```sh
 nix develop
 go test -race ./...
-go build -o local/bin/jman ./cmd/jman
+go vet ./...
 python3 tests/integration.py local/bin/jman
 python3 tests/bench_test.py local/bin/jman
-
-# 고정된 오프라인 의존성으로 패키지와 통합 검사
 nix flake check -L
 ```
 
-## 분석 범위
+기여 시 코드, CLI/help, 지원 범위, 검증 기록, benchmark claim을 함께 유지해야 한다. 구체적인 변경 절차와 PR checklist는 [CONTRIBUTING.md](CONTRIBUTING.md)를 참고한다.
 
-- 기본 의미는 compile-time binding이다. references는 현재 import된 workspace의 정적 Java 참조다.
-- 인접 저장소의 HEAD를 JAR의 소스로 대체하지 않는다. 실제 Gradle composite substitution은 따로 따라간다.
-- sources JAR의 대응은 `coordinate-only` 등으로 표시한다. source/binary의 동일 빌드 provenance를 검증했다고 주장하지 않는다.
-- Spring의 실제 bean 선택, proxy 실행 경로, reflection과 동적 JPA query를 일반 Java references가 모두 표현하지는 않는다.
-- compile/import 문제가 있으면 `partial`과 diagnostics를 반환한다. 종료 코드 3은 결과가 불완전함을 뜻한다.
-- 현재 benchmark shell adapter는 신뢰하는 에이전트를 disposable 환경에서 실행하는 용도다. adversarial sandbox는 제공하지 않는다.
+## 문서와 라이선스
 
-구현 현황과 남은 확장 범위는 [지원 범위](docs/support.md)를 참고한다.
-
-실제로 실행한 검사와 AI 경제성 측정 상태는 [검증 기록](docs/validation.md)에 정리했다.
-
-## 설계 문서
-
-- [요구사항과 에이전트 인터페이스](docs/requirements.md)
-- [아키텍처와 구현 순서](docs/architecture.md)
-- [벤치마크와 경제성 검증](docs/benchmark.md)
+- [지원 범위](docs/support.md): 현재 제공 기능·한계·suite/adapter 계약
+- [검증 기록](docs/validation.md): 재현 가능한 검증과 실제 trial 상태
+- [요구사항](docs/requirements.md), [아키텍처](docs/architecture.md), [벤치마크 설계](docs/benchmark.md): 목표와 설계 결정
+- [기여 가이드](CONTRIBUTING.md)
+- [MIT License](LICENSE)
 
 핵심 원칙: **빌드가 해석한 의존성을 기준으로 답하고, 출처·분석 범위·불완전성을 함께 전달한다.**
-
-설계 문서의 SHOULD와 후속 단계는 제품의 확장 방향이다. 현재 지원 여부는 위 사용법과 지원 범위 문서를 기준으로 한다.

@@ -1,6 +1,7 @@
 {
   buildGoModule,
   makeWrapper,
+  lib,
   jdk21,
   jdt-language-server,
   gradle,
@@ -31,4 +32,11 @@ buildGoModule {
       --set-default JMAN_GRADLE_MODEL "$out/share/jman/gradle/model.gradle" \
       --set-default JMAN_SKILL "$out/share/jman/skills/jman/SKILL.md"
   '';
+
+  meta = {
+    description = "Build-aware Java symbol navigation for AI agents";
+    homepage = "https://github.com/jman-dev/jman";
+    license = lib.licenses.mit;
+    mainProgram = "jman";
+  };
 }

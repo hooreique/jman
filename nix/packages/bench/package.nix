@@ -1,5 +1,6 @@
 {
   writeShellApplication,
+  lib,
   python3,
   git,
   jdk21,
@@ -18,4 +19,9 @@ writeShellApplication {
     jman
   ];
   text = ''exec python3 ${jmanSrc}/bench/jman_bench.py "$@"'';
+  meta = {
+    description = "Paired benchmark runner for jman";
+    license = lib.licenses.mit;
+    mainProgram = "jman-bench";
+  };
 }

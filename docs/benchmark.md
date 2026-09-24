@@ -1,6 +1,6 @@
 # 벤치마크와 경제성 검증
 
-상태: runner, deterministic fixture, 독립 evaluator, provider/harness adapter는 구현·검증됐다. 실제 모델 API 인증 또는 외부 adapter 설정이 없어서 실제 agent A/B 결과와 경제성 수치는 아직 없다. 이 문서의 가설·권장 측정 항목과 현재 runner가 수집하는 항목을 구분한다. 자세한 상태는 [검증 기록](validation.md)을 본다.
+상태: runner, deterministic fixture, 독립 evaluator, provider/harness adapter는 구현·검증됐다. 실제 모델을 사용한 내부 라이브러리 출처 탐색 3회 paired trial도 수행했으며, 결과와 한계는 [trial report](../reports/2026-09-24-opencode-jdtls-origin-navigation-report.md)에 기록했다. 이 문서의 가설·권장 측정 항목과 현재 runner가 수집하는 항목을 구분하며, 단일 문제의 trial을 일반 성능 주장으로 해석하지 않는다. 자세한 상태는 [검증 기록](validation.md)을 본다.
 
 ## 1. 검증할 가설
 
