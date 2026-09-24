@@ -25,23 +25,35 @@ nix flake check -L
 
 `nix flake check -L`은 Go unit test, benchmark runner test, 실제 JDTLS/Gradle integration fixture를 실행한다. fixture의 Java dependency는 Nix로 고정되어 있으며 integration은 Gradle offline 모드로 실행된다.
 
-## 문서 유지 계약
+## 문서 책임과 경계
 
-각 문서의 역할을 구분한다.
+문서는 짧고, 목적이 하나이며, 서로의 역할을 침범하지 않아야 한다. 구현 변경으로 문서를 길게 보완하기보다, **어느 문서가 그 사실의 단일 source of truth인지** 먼저 결정해 중복을 줄인다. 현재 동작을 장래 계획처럼 쓰거나, 설계 목표를 이미 제공되는 기능처럼 쓰지 않는다.
 
-| 파일 | authoritative 내용 | 변경 시점 |
+| 문서 | 책임 | 쓰지 않는 내용 |
 |---|---|---|
-| `README.md` | 설치, 현재 CLI 사용법, 정확성 경계, 공개 benchmark 요약 | 사용자에게 보이는 명령·platform·결과 요약 변경 시 |
-| `docs/support.md` | **현재 제공하는** 기능, 종료 코드, 한계, suite/adapter schema | 동작·응답·제한·schema 변경 시 |
-| `docs/validation.md` | 실제로 실행한 검증과 실제 model trial의 상태 | 검증 범위·명령·측정 상태 변경 시 |
-| `docs/requirements.md` | 제품 요구사항과 미구현 SHOULD/MUST 목표 | 제품 요구사항 변경 시 |
-| `docs/architecture.md` | 구현 구조와 후속 설계 | 구조·lifecycle·provenance 설계 변경 시 |
-| `docs/benchmark.md` | benchmark 가설, fixture와 실험 설계 | suite·oracle·실험군 설계 변경 시 |
-| `skills/jman/SKILL.md` | agent에게 배포되는 최소 사용 규칙 | CLI 의미 또는 안전 규칙 변경 시 |
+| `README.md` | 설치, 첫 사용, 필요한 설정, 사용자가 알아야 할 핵심 한계 | 개발 절차, 내부 설계, 전체 지원 행렬, benchmark 방법론 |
+| `CONTRIBUTING.md` | 유지보수 규칙, 문서 경계, 테스트, PR 기준 | 일반 사용 튜토리얼, 제품 마케팅 |
+| `docs/support.md` | 현재 제공 기능, 응답/종료 코드, 명시적 한계, suite/adapter 계약 | 장기 설계 서술, 완료되지 않은 계획 |
+| `docs/validation.md` | 실제로 실행한 검증과 관측된 trial | 제품 요구사항 또는 일반화된 성능 주장 |
+| `docs/requirements.md` | 제품 요구사항과 미구현 목표 | 현재 구현의 유일한 상태 선언 |
+| `docs/architecture.md` | 구현 구조와 설계 근거 | 사용자 getting-started 절차 |
+| `docs/benchmark.md` | benchmark 가설, fixture, oracle, 실험 설계 | 관측값의 유일한 기록 |
+| `skills/jman/SKILL.md` | agent에게 배포하는 최소 사용·안전 규칙 | 구현 세부사항과 긴 설명 |
 
-문서 사이에 충돌이 생기면 `docs/support.md`의 현재 지원 범위와 `docs/validation.md`의 실제 측정 상태를 우선한다. 장래 목표를 현재 기능처럼 README에 쓰지 않는다.
+문서 사이에 충돌하면 `docs/support.md`의 현재 지원 범위와 `docs/validation.md`의 실제 측정 상태를 우선한다.
 
-### 변경 유형별 최소 동기화
+### 지속 가능한 문서 유지
+
+- 한 사실은 한 곳에서 자세히 설명하고, 다른 문서는 링크한다. 같은 명령 목록·수치·한계를 여러 문서에 복사하지 않는다.
+- README는 getting started에 필요한 내용만 유지한다. 사용자가 첫 성공을 한 뒤 필요한 세부사항은 `docs/` 또는 `CONTRIBUTING.md`로 보낸다.
+- 변경과 무관한 문서 재작성은 피한다. 문서 구조를 바꿀 때는 링크, 중복, source of truth를 함께 정리한다.
+- 측정하지 않은 성능·비용·정확도 수치를 쓰지 않는다. 실제 trial 수치는 report와 validation에 근거·표본·한계를 함께 기록한다.
+- 명령, option, JSON field, exit code처럼 코드에서 확인 가능한 사실은 `jman --help`, schema, test를 먼저 갱신하고 문서를 맞춘다.
+- 새 문서는 기존 문서의 책임을 대체하는 이유가 있을 때만 추가한다. 그렇지 않으면 기존 문서를 보완한다.
+
+## 변경 동기화
+
+변경 유형별로 다음 문서와 테스트를 함께 검토한다.
 
 | 변경 | 반드시 함께 검토할 파일 |
 |---|---|
@@ -53,7 +65,7 @@ nix flake check -L
 | benchmark runner, usage/cost formula, evaluator | `bench/`, runner tests, `docs/support.md`, `docs/benchmark.md` |
 | performance/cost/correctness claim | reproducible report under `reports/`, `docs/validation.md`, README summary |
 
-`jman --help` is the executable source of truth for option spellings. Before updating README command examples, compare them with its output.
+`jman --help` is the executable source of truth for option spellings. README 예시를 갱신하기 전에 help 출력과 비교한다.
 
 ## Code guidelines
 
@@ -94,6 +106,7 @@ If provider usage is missing, report it as missing—never infer token counts fr
 - [ ] Go code is formatted and relevant tests pass.
 - [ ] `nix flake check -L` passes, or the limitation is explained.
 - [ ] CLI/help, README, support scope, skill, and design docs were reviewed per the table above.
+- [ ] 문서 책임과 경계를 확인했고, 같은 사실을 불필요하게 중복하지 않았다.
 - [ ] New behavior has an appropriate unit or real JDTLS/Gradle integration test.
 - [ ] Generated files, caches, credentials, and evaluator secrets are absent from the diff.
 - [ ] Performance or benchmark statements link to reproducible evidence and state their limits.
