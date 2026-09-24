@@ -113,6 +113,10 @@
           };
       };
 
-      homeManagerModules.default = import ./nix/modules/home-manager.nix { inherit self; };
+      homeManagerModules.default = { config, lib, pkgs, ... }:
+        import ./nix/modules/home-manager.nix {
+          inherit config lib pkgs;
+          jman = self.packages.${pkgs.stdenv.hostPlatform.system}.jman;
+        };
     };
 }
