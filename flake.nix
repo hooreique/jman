@@ -100,14 +100,7 @@
           };
         in
         {
-          unit = packages.jman.overrideAttrs {
-            checkPhase = ''
-              runHook preCheck
-              go test -race ./...
-              go vet ./...
-              runHook postCheck
-            '';
-          };
+          unit = packages.jman;
           bench-package = pkgs.runCommand "jman-bench-package-check" { } ''
             ${packages.jman-bench}/bin/jman-bench --help > /dev/null
             touch $out

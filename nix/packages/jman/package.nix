@@ -18,6 +18,13 @@ buildGoModule {
 
   nativeBuildInputs = [ makeWrapper ];
 
+  checkPhase = ''
+    runHook preCheck
+    go test -race ./...
+    go vet ./...
+    runHook postCheck
+  '';
+
   postInstall = ''
     mkdir -p "$out/share/jman"
     cp -r skills gradle "$out/share/jman/"
