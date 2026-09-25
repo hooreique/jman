@@ -10,6 +10,13 @@ let
       "sha256-hUd6RlXrssB0qQmc+3Sb5FREn+5WTUKCYQ3xuF98UIs="
     ]
     [
+      "org.projectlombok"
+      "lombok-mapstruct-binding"
+      "0.2.0"
+      ""
+      "sha256-khYROfcvYgt8cCNU8cmXp+XEhTBZBOS0tKJihoQyEq8="
+    ]
+    [
       "org.mapstruct"
       "mapstruct"
       "1.6.3"

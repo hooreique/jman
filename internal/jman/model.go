@@ -47,7 +47,7 @@ func gradleCommand(ctx context.Context, root string, args ...string) *exec.Cmd {
 	}
 	cmd := exec.CommandContext(ctx, name, args...)
 	cmd.Dir = root
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Pdeathsig: syscall.SIGTERM}
+	cmd.SysProcAttr = childProcessAttrs()
 	cmd.Cancel = func() error {
 		if cmd.Process != nil {
 			return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)

@@ -101,6 +101,10 @@
         in
         {
           unit = packages.jman;
+          bench-package = pkgs.runCommand "jman-bench-package-check" { } ''
+            ${packages.jman-bench}/bin/jman-bench --help > /dev/null
+            touch $out
+          '';
           benchmark = pkgs.runCommand "jman-benchmark-check" common ''
             export HOME=$TMPDIR/home
             mkdir -p "$HOME"

@@ -7,7 +7,7 @@ Last updated: 2026-09-24. Runtime versions and fixture artifacts are fixed by `f
 ```sh
 nix develop --command go test -race ./...
 nix develop --command go vet ./...
-nix flake check -L
+nix flake check --no-write-lock-file --print-build-logs
 nix build .#jman .#jman-bench
 ```
 

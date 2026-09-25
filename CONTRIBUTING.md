@@ -14,10 +14,10 @@ go vet ./...
 go build -o local/bin/jman ./cmd/jman
 python3 tests/integration.py local/bin/jman
 python3 tests/bench_test.py local/bin/jman
-nix flake check -L
+nix flake check --no-write-lock-file --print-build-logs
 ```
 
-`nix flake check -L` runs Go tests, benchmark-runner tests, and real JDTLS/Gradle integration tests. Fixture dependencies are fixed by Nix and integration tests use Gradle offline mode.
+Fixture dependencies are fixed by Nix and integration tests use Gradle offline mode.
 
 ## Documentation ownership
 

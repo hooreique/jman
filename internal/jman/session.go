@@ -184,7 +184,7 @@ func (s *Session) start(ctx context.Context) error {
 		}
 		cmd = exec.Command(filepath.Join(javaHome, "bin", "java"),
 			"-Declipse.application=org.eclipse.jdt.ls.core.id1", "-Dosgi.bundles.defaultStartLevel=4", "-Declipse.product=org.eclipse.jdt.ls.core.product",
-			"-Dosgi.sharedConfiguration.area="+filepath.Join(home, "config_linux"), "-Dosgi.sharedConfiguration.area.readOnly=true", "-Dosgi.configuration.cascaded=true",
+			"-Dosgi.sharedConfiguration.area="+filepath.Join(home, jdtlsConfigDir), "-Dosgi.sharedConfiguration.area.readOnly=true", "-Dosgi.configuration.cascaded=true",
 			"-Xms128m", "-Xmx1536m", "--add-modules=ALL-SYSTEM", "--add-opens", "java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/java.lang=ALL-UNNAMED",
 			"-jar", jars[0], "-data", filepath.Join(dir, "data"), "-configuration", filepath.Join(dir, "config"))
 	}
@@ -198,7 +198,7 @@ func (s *Session) start(ctx context.Context) error {
 	}
 	cmd.Env = append(os.Environ(), "JAVA_HOME="+javaHome)
 	cmd.Stderr = log
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Pdeathsig: syscall.SIGTERM}
+	cmd.SysProcAttr = childProcessAttrs()
 	stdin, e := cmd.StdinPipe()
 	if e != nil {
 		log.Close()
