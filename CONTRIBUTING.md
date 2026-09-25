@@ -14,18 +14,10 @@ go vet ./...
 go build -o local/bin/jman ./cmd/jman
 python3 tests/integration.py local/bin/jman
 python3 tests/bench_test.py local/bin/jman
-nix flake check -L
-```
-
-The canonical local and CI validation command is:
-
-```sh
 nix flake check --no-write-lock-file --print-build-logs
 ```
 
-It runs Go race tests and `go vet`, builds and smoke-tests the benchmark package, and runs benchmark-runner tests and real JDTLS/Gradle integration tests. Fixture dependencies are fixed by Nix and integration tests use Gradle offline mode. `nix flake check -L` runs the same checks, but permits lock-file updates.
-
-GitHub Actions supplies checkout, Nix, and native runners for `x86_64-linux`, `aarch64-linux`, and `aarch64-darwin`. All validation logic lives in the flake and repository tests. A local run reproduces the checks for the current platform; validating the full matrix requires each platform's runner.
+Fixture dependencies are fixed by Nix and integration tests use Gradle offline mode.
 
 ## Documentation ownership
 
