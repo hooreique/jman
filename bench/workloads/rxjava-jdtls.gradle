@@ -1,0 +1,5 @@
+
+// Resource study: keep the Java 9 module descriptor out of the Java 8 Eclipse source set.
+eclipse.classpath.file.whenMerged { classpath ->
+    classpath.entries.removeAll { entry -> entry.kind == 'src' && entry.path == 'src/main/module' }
+}

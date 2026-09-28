@@ -19,6 +19,10 @@ def main():
         root = Path(tmp)
         fixture = materialize(root / "fixture")
         project = Path(fixture["project"])
+        config_path = project / ".jman.json"
+        project_config = json.loads(config_path.read_text())
+        project_config["jdtlsMaxHeapMiB"] = 1024
+        config_path.write_text(json.dumps(project_config))
         socket = root / "service.sock"
         env = dict(os.environ, JMAN_SOCKET=str(socket), JMAN_CACHE_HOME=str(root / "cache"), GRADLE_USER_HOME=str(root / "gradle"))
         log = (root / "daemon.log").open("w")
@@ -40,6 +44,11 @@ def main():
             assert not before["success"], "fixture is not initially broken"
             prepared = query("prepare", expected=(0, 3))
             assert not prepared.get("warnings"), prepared
+            initial_status = query("status")
+            assert initial_status["context"]["maxSessions"] == 2, initial_status
+            assert initial_status["context"]["idleTimeout"] == "15m0s", initial_status
+            initial_session = initial_status["results"][0]["detail"]
+            assert initial_session["pid"] > 0 and initial_session["jdtlsMaxHeapMiB"] == 1024, initial_status
             location = fixture["location"]
             found = query("definition", location, "--symbol", "normalize")
             definition = found["results"][0]
@@ -83,9 +92,15 @@ def main():
 
             build = project / "build.gradle"
             original_build = build.read_text()
+            project_config["jdtlsMaxHeapMiB"] = 768
+            config_path.write_text(json.dumps(project_config))
             build.write_text(original_build.replace("implementation 'com.acme:shared-text:2.4.1'", "implementation 'com.acme:shared-text:1.0.0'; constraints { implementation 'com.acme:shared-text:2.4.1' }"))
             conflict = query("definition", location, "--symbol", "normalize", expected=(0, 3))
             assert conflict["results"][0]["artifact"] == "com.acme:shared-text:2.4.1", conflict
+            changed_session = query("status")["results"][0]["detail"]
+            assert changed_session["pid"] != initial_session["pid"], changed_session
+            assert changed_session["jdtlsMaxHeapMiB"] == 768, changed_session
+            print("PASS configured heap and effective session status after restart", flush=True)
             print("PASS selected dependency version differs from declared version", flush=True)
             build.write_text(original_build)
 

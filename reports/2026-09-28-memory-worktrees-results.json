@@ -1,0 +1,3691 @@
+{
+  "schemaVersion": 1,
+  "implementationCommit": "3df104cca649c66be18f555553e26e58a234cb7a",
+  "report": "2026-09-28-memory-worktrees-report.md",
+  "units": {
+    "memory": "bytes",
+    "time": "seconds"
+  },
+  "experiments": {
+    "concurrent": {
+      "projectCommit": "079896035e13d2e27c13bc63e39877e5924c3854",
+      "jmanExecutableSHA256": "9035531c5d3e7f2127531f3dcb30d04fc85fd83a5128ecc1ee27343b5a662636",
+      "parameters": {
+        "sessions": "1,3,5",
+        "repetitions": 3,
+        "startup": "concurrent",
+        "timeout": 600.0,
+        "query_rounds": 3,
+        "refresh_rounds": 0,
+        "steady_seconds": 3,
+        "idle_seconds": 0,
+        "idle_timeout": 900,
+        "lifecycle": false,
+        "sample_period": 0.2,
+        "jdtls_max_heap_mib": null
+      },
+      "trials": [
+        {
+          "trial": "001-1-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 1,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 2841792512,
+          "peakPSSBytes": 2794498048,
+          "availableSamples": 456,
+          "pssSamples": 455,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 58.964639458999955,
+              "latency": {
+                "count": 1,
+                "p50Seconds": 58.96218199899977,
+                "p95Seconds": 58.96218199899977,
+                "maxSeconds": 58.96218199899977
+              },
+              "commands": 1,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 54.35778357300023,
+              "latency": {
+                "count": 3,
+                "p50Seconds": 1.1841280929997993,
+                "p95Seconds": 52.15603068399969,
+                "maxSeconds": 52.15603068399969
+              },
+              "commands": 3,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 9.041592643000058,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 0.9592317469996487,
+                "p95Seconds": 1.3215113609999207,
+                "maxSeconds": 1.3215113609999207
+              },
+              "commands": 9,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 59.04195685099967,
+              "samples": 200,
+              "meanRSSBytes": 1917468651.52,
+              "peakRSSBytes": 2841792512,
+              "peakPSSBytes": 2794498048,
+              "lastRSSBytes": 2633777152,
+              "lastPSSBytes": 2586912768
+            },
+            "first-queries": {
+              "seconds": 54.44871927400027,
+              "samples": 181,
+              "meanRSSBytes": 2247342385.5027623,
+              "peakRSSBytes": 2791342080,
+              "peakPSSBytes": 2742841344,
+              "lastRSSBytes": 2695143424,
+              "lastPSSBytes": 2651827200
+            },
+            "steady": {
+              "seconds": 3.098164916999849,
+              "samples": 12,
+              "meanRSSBytes": 2694460416.0,
+              "peakRSSBytes": 2699599872,
+              "peakPSSBytes": 2653965312,
+              "lastRSSBytes": 2679042048,
+              "lastPSSBytes": 2633337856
+            },
+            "warm-queries": {
+              "seconds": 9.11778269100023,
+              "samples": 34,
+              "meanRSSBytes": 2723242104.470588,
+              "peakRSSBytes": 2744750080,
+              "peakPSSBytes": 2695970816,
+              "lastRSSBytes": 2720567296,
+              "lastPSSBytes": 2674916352
+            },
+            "after-stop": {
+              "seconds": 3.042781374000242,
+              "samples": 13,
+              "meanRSSBytes": 771040807.3846154,
+              "peakRSSBytes": 771108864,
+              "peakPSSBytes": 769174528,
+              "lastRSSBytes": 770961408,
+              "lastPSSBytes": 769076224
+            },
+            "after-cleanup": {
+              "seconds": 0.09293350699999792,
+              "samples": 3,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "6fbc2912818491a338b419825ea86545ade88a434d2b074e0b48d7b682ac5cba",
+            "resources.jsonl": "0778e73180960151c41af217397b2d0c6821b92bf227031f1008aedfa1df3abb",
+            "events.jsonl": "1fdef8b55efb4b1843e10565ff05856f1755a2203f667e3c3fa8b0380827255b"
+          },
+          "atPeakRSS": {
+            "rssBytes": 2841792512,
+            "phase": "cold-prepare",
+            "byKind": {
+              "jman": 17432576,
+              "gradle": 724357120,
+              "jdtls": 2100002816
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 17809408.0,
+              "jdtls": 1905542144.0,
+              "gradle": 771108864.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 771040807.3846154,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 1,
+          "host": {
+            "minAvailableBytes": 28910538752,
+            "peakSwapUsedBytes": 0,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          }
+        },
+        {
+          "trial": "001-3-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 3,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 7983370240,
+          "peakPSSBytes": 7576019968,
+          "availableSamples": 649,
+          "pssSamples": 643,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 165.0955774719996,
+              "latency": {
+                "count": 3,
+                "p50Seconds": 164.25375336600018,
+                "p95Seconds": 165.093135178,
+                "maxSeconds": 165.093135178
+              },
+              "commands": 3,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 161.64844485599997,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 1.4143934419998914,
+                "p95Seconds": 159.38222952600017,
+                "maxSeconds": 159.38222952600017
+              },
+              "commands": 9,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 11.512774475000242,
+              "latency": {
+                "count": 27,
+                "p50Seconds": 1.0724138809996475,
+                "p95Seconds": 2.337785751999945,
+                "maxSeconds": 2.3906903860001876
+              },
+              "commands": 27,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 165.23951013900023,
+              "samples": 295,
+              "meanRSSBytes": 5135867681.844068,
+              "peakRSSBytes": 7983370240,
+              "peakPSSBytes": 7576019968,
+              "lastRSSBytes": 7208480768,
+              "lastPSSBytes": 6811247616
+            },
+            "first-queries": {
+              "seconds": 161.79205377200014,
+              "samples": 282,
+              "meanRSSBytes": 5544219480.964539,
+              "peakRSSBytes": 7453429760,
+              "peakPSSBytes": 7081775104,
+              "lastRSSBytes": 7385989120,
+              "lastPSSBytes": 6979938304
+            },
+            "steady": {
+              "seconds": 3.2787539859996286,
+              "samples": 11,
+              "meanRSSBytes": 7372187834.181818,
+              "peakRSSBytes": 7385989120,
+              "peakPSSBytes": 6982964224,
+              "lastRSSBytes": 7365513216,
+              "lastPSSBytes": 6962320384
+            },
+            "warm-queries": {
+              "seconds": 11.667430785000306,
+              "samples": 30,
+              "meanRSSBytes": 7451133815.466666,
+              "peakRSSBytes": 7495057408,
+              "peakPSSBytes": 7090281472,
+              "lastRSSBytes": 7430148096,
+              "lastPSSBytes": 7027221504
+            },
+            "after-stop": {
+              "seconds": 3.041672501999983,
+              "samples": 13,
+              "meanRSSBytes": 869289984.0,
+              "peakRSSBytes": 869289984,
+              "peakPSSBytes": 867630080,
+              "lastRSSBytes": 869289984,
+              "lastPSSBytes": 867630080
+            },
+            "after-cleanup": {
+              "seconds": 0.10826815099972009,
+              "samples": 3,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "8c664f94bd71cc6f7aa54a0ae40ab51a93b87e8aaea8b0584cb00f5ff7cd4653",
+            "resources.jsonl": "8b219594dcae86ded8d43394a7e403ba0ef896c2dad2428476a86dc4d8983d9f",
+            "events.jsonl": "dd80963f910f96f64d5fbae4c67d3c6c09f255ff6652c19d7c460b1ba627e9ab"
+          },
+          "atPeakRSS": {
+            "rssBytes": 7983370240,
+            "phase": "cold-prepare",
+            "byKind": {
+              "jman": 22544384,
+              "gradle": 833343488,
+              "jdtls": 7127482368
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 23368797.09090909,
+              "jdtls": 6479529053.090909,
+              "gradle": 869289984.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 869289984.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 3,
+          "host": {
+            "minAvailableBytes": 24094244864,
+            "peakSwapUsedBytes": 0,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          }
+        },
+        {
+          "trial": "001-5-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 5,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 12544004096,
+          "peakPSSBytes": 11823138816,
+          "availableSamples": 810,
+          "pssSamples": 790,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 335.8798934380002,
+              "latency": {
+                "count": 5,
+                "p50Seconds": 315.07043763499996,
+                "p95Seconds": 335.8772042679998,
+                "maxSeconds": 335.8772042679998
+              },
+              "commands": 5,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 302.4291248120003,
+              "latency": {
+                "count": 15,
+                "p50Seconds": 2.1409525250001025,
+                "p95Seconds": 299.9256804349998,
+                "maxSeconds": 299.9256804349998
+              },
+              "commands": 15,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 15.146488811999916,
+              "latency": {
+                "count": 45,
+                "p50Seconds": 1.140800483000021,
+                "p95Seconds": 4.239351585999884,
+                "maxSeconds": 4.569294220999836
+              },
+              "commands": 45,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 336.0851746120002,
+              "samples": 420,
+              "meanRSSBytes": 7525210102.247619,
+              "peakRSSBytes": 11649175552,
+              "peakPSSBytes": 11201014784,
+              "lastRSSBytes": 10845540352,
+              "lastPSSBytes": 10083333120
+            },
+            "first-queries": {
+              "seconds": 302.6769329859999,
+              "samples": 321,
+              "meanRSSBytes": 8514706001.345795,
+              "peakRSSBytes": 12544004096,
+              "peakPSSBytes": 11823138816,
+              "lastRSSBytes": 12357869568,
+              "lastPSSBytes": 11596468224
+            },
+            "steady": {
+              "seconds": 3.21721767300005,
+              "samples": 9,
+              "meanRSSBytes": 12329754624.0,
+              "peakRSSBytes": 12329754624,
+              "peakPSSBytes": 11568328704,
+              "lastRSSBytes": 12329754624,
+              "lastPSSBytes": 11568259072
+            },
+            "warm-queries": {
+              "seconds": 15.367616037000062,
+              "samples": 25,
+              "meanRSSBytes": 12494071398.4,
+              "peakRSSBytes": 12533329920,
+              "peakPSSBytes": 11767489536,
+              "lastRSSBytes": 12466573312,
+              "lastPSSBytes": 11705077760
+            },
+            "after-stop": {
+              "seconds": 3.0416476300001705,
+              "samples": 13,
+              "meanRSSBytes": 877178880.0,
+              "peakRSSBytes": 877178880,
+              "peakPSSBytes": 875058176,
+              "lastRSSBytes": 877178880,
+              "lastPSSBytes": 875058176
+            },
+            "after-cleanup": {
+              "seconds": 0.10628907399996024,
+              "samples": 3,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "a5b8036d199efbeb911e66cf86763569b659f8c3aca0a028eaacee7b4d85df17",
+            "resources.jsonl": "e89d67c0d96a8ee94a94eec5521d53632b1d52fa42fa2f3dcd34ac72858bc9ce",
+            "events.jsonl": "fc18a745d441814d3eceb79018f43f602a0eb65ca65dbecd786daa69053809f3"
+          },
+          "atPeakRSS": {
+            "rssBytes": 12544004096,
+            "phase": "first-queries",
+            "byKind": {
+              "jman": 31105024,
+              "gradle": 877318144,
+              "jdtls": 11635580928
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 26046464.0,
+              "jdtls": 11426390016.0,
+              "gradle": 877318144.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 877178880.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 5,
+          "host": {
+            "minAvailableBytes": 19773243392,
+            "peakSwapUsedBytes": 0,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          }
+        },
+        {
+          "trial": "002-1-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 1,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 3098177536,
+          "peakPSSBytes": 3050056704,
+          "availableSamples": 452,
+          "pssSamples": 451,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 58.75796140400007,
+              "latency": {
+                "count": 1,
+                "p50Seconds": 58.75591512400024,
+                "p95Seconds": 58.75591512400024,
+                "maxSeconds": 58.75591512400024
+              },
+              "commands": 1,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 55.0903402240001,
+              "latency": {
+                "count": 3,
+                "p50Seconds": 1.1877028869998867,
+                "p95Seconds": 52.76999344199976,
+                "maxSeconds": 52.76999344199976
+              },
+              "commands": 3,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 9.02886824999996,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 0.9856177620004019,
+                "p95Seconds": 1.3126844869998422,
+                "maxSeconds": 1.3126844869998422
+              },
+              "commands": 9,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 58.844848874000036,
+              "samples": 197,
+              "meanRSSBytes": 1976249453.1573603,
+              "peakRSSBytes": 3094806528,
+              "peakPSSBytes": 3047331840,
+              "lastRSSBytes": 3094806528,
+              "lastPSSBytes": 3047331840
+            },
+            "first-queries": {
+              "seconds": 55.18399536100014,
+              "samples": 180,
+              "meanRSSBytes": 2367407104.0,
+              "peakRSSBytes": 3098177536,
+              "peakPSSBytes": 3050056704,
+              "lastRSSBytes": 2872643584,
+              "lastPSSBytes": 2827988992
+            },
+            "steady": {
+              "seconds": 3.099649521000174,
+              "samples": 12,
+              "meanRSSBytes": 2873561088.0,
+              "peakRSSBytes": 2873561088,
+              "peakPSSBytes": 2828419072,
+              "lastRSSBytes": 2873561088,
+              "lastPSSBytes": 2828419072
+            },
+            "warm-queries": {
+              "seconds": 9.111977005999961,
+              "samples": 34,
+              "meanRSSBytes": 2842395226.352941,
+              "peakRSSBytes": 2878324736,
+              "peakPSSBytes": 2834686976,
+              "lastRSSBytes": 2842079232,
+              "lastPSSBytes": 2792854528
+            },
+            "after-stop": {
+              "seconds": 3.0426235069999166,
+              "samples": 13,
+              "meanRSSBytes": 759826274.4615384,
+              "peakRSSBytes": 759971840,
+              "peakPSSBytes": 757683200,
+              "lastRSSBytes": 759799808,
+              "lastPSSBytes": 757580800
+            },
+            "after-cleanup": {
+              "seconds": 0.09826724000004106,
+              "samples": 3,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "5e1d61f765e725e87d567e8c94381286ea377d8428291ce39c71d99733ad9ab7",
+            "resources.jsonl": "0e7b502848c38b2724892a0a37dda79ef62bddfd649a0e07c0b23ec21938e099",
+            "events.jsonl": "096297fcc59c0bf3f0f388d7f5d325e9f9836190dfe7f7146bdc41ed2cb2bb6f"
+          },
+          "atPeakRSS": {
+            "rssBytes": 3098177536,
+            "phase": "first-queries",
+            "byKind": {
+              "jman": 18202624,
+              "gradle": 737472512,
+              "jdtls": 2342502400
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 18001920.0,
+              "jdtls": 2095587328.0,
+              "gradle": 759971840.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 759826274.4615384,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 1,
+          "host": {
+            "minAvailableBytes": 28548648960,
+            "peakSwapUsedBytes": 0,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          }
+        },
+        {
+          "trial": "002-3-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 3,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 8891838464,
+          "peakPSSBytes": 8404543488,
+          "availableSamples": 608,
+          "pssSamples": 596,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 174.29776919799997,
+              "latency": {
+                "count": 3,
+                "p50Seconds": 174.28499490499962,
+                "p95Seconds": 174.29520662599998,
+                "maxSeconds": 174.29520662599998
+              },
+              "commands": 3,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 150.024687696,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 2.5130218369999966,
+                "p95Seconds": 147.17953378600032,
+                "maxSeconds": 147.17953378600032
+              },
+              "commands": 9,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 11.516879816000255,
+              "latency": {
+                "count": 27,
+                "p50Seconds": 1.0558704410000246,
+                "p95Seconds": 2.625738333999834,
+                "maxSeconds": 2.629962114999671
+              },
+              "commands": 27,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 174.46228271600012,
+              "samples": 294,
+              "meanRSSBytes": 5272771799.945579,
+              "peakRSSBytes": 8891838464,
+              "peakPSSBytes": 8404543488,
+              "lastRSSBytes": 8687063040,
+              "lastPSSBytes": 8213690368
+            },
+            "first-queries": {
+              "seconds": 150.18375908000007,
+              "samples": 242,
+              "meanRSSBytes": 6044238077.884297,
+              "peakRSSBytes": 8712757248,
+              "peakPSSBytes": 8221534208,
+              "lastRSSBytes": 7566258176,
+              "lastPSSBytes": 7164421120
+            },
+            "steady": {
+              "seconds": 3.24514948299975,
+              "samples": 11,
+              "meanRSSBytes": 7566258176.0,
+              "peakRSSBytes": 7566258176,
+              "peakPSSBytes": 7164429312,
+              "lastRSSBytes": 7566258176,
+              "lastPSSBytes": 7164408832
+            },
+            "warm-queries": {
+              "seconds": 11.672965477000162,
+              "samples": 29,
+              "meanRSSBytes": 7669352801.103448,
+              "peakRSSBytes": 7714594816,
+              "peakPSSBytes": 7308445696,
+              "lastRSSBytes": 7586922496,
+              "lastPSSBytes": 7184913408
+            },
+            "after-stop": {
+              "seconds": 3.0429847589998644,
+              "samples": 13,
+              "meanRSSBytes": 860147712.0,
+              "peakRSSBytes": 860147712,
+              "peakPSSBytes": 857842688,
+              "lastRSSBytes": 860147712,
+              "lastPSSBytes": 857842688
+            },
+            "after-cleanup": {
+              "seconds": 0.05898727499970846,
+              "samples": 2,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "4a2664acbd1c07684b9e9515b24e780556a4d3e589176812cfd01fee95e177ff",
+            "resources.jsonl": "f6f8e8a23f30f2cc349e6ff92bbe25aee09656f4ae7439daa768e0891fa1350d",
+            "events.jsonl": "01185d34d3db5f319bd48e7efc497fe012d448ea8dd89e12c022a1294391705c"
+          },
+          "atPeakRSS": {
+            "rssBytes": 8891838464,
+            "phase": "cold-prepare",
+            "byKind": {
+              "jman": 18513920,
+              "gradle": 2085203968,
+              "jdtls": 6788120576
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 22200320.0,
+              "jdtls": 6683910144.0,
+              "gradle": 860147712.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 860147712.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 3,
+          "host": {
+            "minAvailableBytes": 23114530816,
+            "peakSwapUsedBytes": 0,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          }
+        },
+        {
+          "trial": "002-5-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 5,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 12909174784,
+          "peakPSSBytes": 12143401984,
+          "availableSamples": 791,
+          "pssSamples": 768,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 331.96784806100004,
+              "latency": {
+                "count": 5,
+                "p50Seconds": 330.52097031400035,
+                "p95Seconds": 331.96472390000054,
+                "maxSeconds": 331.96472390000054
+              },
+              "commands": 5,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 303.68185110000013,
+              "latency": {
+                "count": 15,
+                "p50Seconds": 2.5123318480000307,
+                "p95Seconds": 301.01144212799954,
+                "maxSeconds": 301.01144212799954
+              },
+              "commands": 15,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 14.98999676099993,
+              "latency": {
+                "count": 45,
+                "p50Seconds": 1.1482003610008178,
+                "p95Seconds": 4.115515989999949,
+                "maxSeconds": 4.447534285999609
+              },
+              "commands": 45,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 332.17489232399976,
+              "samples": 410,
+              "meanRSSBytes": 7783717413.463414,
+              "peakRSSBytes": 12346908672,
+              "peakPSSBytes": 11806412800,
+              "lastRSSBytes": 11704647680,
+              "lastPSSBytes": 10945606656
+            },
+            "first-queries": {
+              "seconds": 304.05327274000047,
+              "samples": 314,
+              "meanRSSBytes": 8793966657.222929,
+              "peakRSSBytes": 12628754432,
+              "peakPSSBytes": 11868472320,
+              "lastRSSBytes": 12628754432,
+              "lastPSSBytes": 11868472320
+            },
+            "steady": {
+              "seconds": 3.2256639059996814,
+              "samples": 9,
+              "meanRSSBytes": 12628798122.666666,
+              "peakRSSBytes": 12628885504,
+              "peakPSSBytes": 11868472320,
+              "lastRSSBytes": 12628885504,
+              "lastPSSBytes": 11858637824
+            },
+            "warm-queries": {
+              "seconds": 15.245644044000073,
+              "samples": 24,
+              "meanRSSBytes": 12852955989.333334,
+              "peakRSSBytes": 12909174784,
+              "peakPSSBytes": 12143401984,
+              "lastRSSBytes": 12857991168,
+              "lastPSSBytes": 12097713152
+            },
+            "after-stop": {
+              "seconds": 3.1113472369997908,
+              "samples": 14,
+              "meanRSSBytes": 906510336.0,
+              "peakRSSBytes": 906510336,
+              "peakPSSBytes": 904651776,
+              "lastRSSBytes": 906510336,
+              "lastPSSBytes": 904651776
+            },
+            "after-cleanup": {
+              "seconds": 0.05869621700003336,
+              "samples": 2,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "3dc60155d409048252e22c3cbfc8732d39067f2725ff5e5c90e2d7c1d939d39c",
+            "resources.jsonl": "8260a245139e8dcdfd59084ad9ef73a2a6d755b1b04fcb7e53e7e6dab4392575",
+            "events.jsonl": "48e9fdc4a174e40a03360c17d7dbb270ebab0f9931e9c979e0dac42e17282ea2"
+          },
+          "atPeakRSS": {
+            "rssBytes": 12909174784,
+            "phase": "warm-queries",
+            "byKind": {
+              "jman": 33763328,
+              "gradle": 906510336,
+              "jdtls": 11968901120
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 28430336.0,
+              "jdtls": 11693857450.666666,
+              "gradle": 906510336.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 906510336.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 5,
+          "host": {
+            "minAvailableBytes": 19329728512,
+            "peakSwapUsedBytes": 0,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          }
+        },
+        {
+          "trial": "003-1-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 1,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 3140452352,
+          "peakPSSBytes": 3093114880,
+          "availableSamples": 450,
+          "pssSamples": 448,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 59.17059777199938,
+              "latency": {
+                "count": 1,
+                "p50Seconds": 59.16822739300005,
+                "p95Seconds": 59.16822739300005,
+                "maxSeconds": 59.16822739300005
+              },
+              "commands": 1,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 54.62588207999943,
+              "latency": {
+                "count": 3,
+                "p50Seconds": 1.3064733709998109,
+                "p95Seconds": 52.190243997000834,
+                "maxSeconds": 52.190243997000834
+              },
+              "commands": 3,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 9.065218357999584,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 0.9831096130001242,
+                "p95Seconds": 1.3062714450006752,
+                "maxSeconds": 1.3062714450006752
+              },
+              "commands": 9,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 59.36337766699944,
+              "samples": 197,
+              "meanRSSBytes": 2018255929.177665,
+              "peakRSSBytes": 3137413120,
+              "peakPSSBytes": 3093114880,
+              "lastRSSBytes": 3137413120,
+              "lastPSSBytes": 3093114880
+            },
+            "first-queries": {
+              "seconds": 54.715430185000514,
+              "samples": 179,
+              "meanRSSBytes": 2270454538.0111732,
+              "peakRSSBytes": 3140452352,
+              "peakPSSBytes": 3092708352,
+              "lastRSSBytes": 2730659840,
+              "lastPSSBytes": 2682686464
+            },
+            "steady": {
+              "seconds": 3.090577105000193,
+              "samples": 12,
+              "meanRSSBytes": 2728046592.0,
+              "peakRSSBytes": 2730659840,
+              "peakPSSBytes": 2685880320,
+              "lastRSSBytes": 2720206848,
+              "lastPSSBytes": 2675386368
+            },
+            "warm-queries": {
+              "seconds": 9.182504775999405,
+              "samples": 34,
+              "meanRSSBytes": 2779070945.882353,
+              "peakRSSBytes": 2791780352,
+              "peakPSSBytes": 2743847936,
+              "lastRSSBytes": 2711797760,
+              "lastPSSBytes": 2666711040
+            },
+            "after-stop": {
+              "seconds": 3.043715412999518,
+              "samples": 13,
+              "meanRSSBytes": 770584576.0,
+              "peakRSSBytes": 770584576,
+              "peakPSSBytes": 768570368,
+              "lastRSSBytes": 770584576,
+              "lastPSSBytes": 768472064
+            },
+            "after-cleanup": {
+              "seconds": 0.09519382899998163,
+              "samples": 3,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "4814bb1c7395a003ef8cf9591bf94392fc8744490f01a4aab6078d49ea5b4123",
+            "resources.jsonl": "e0f5264a9f221c190c9d952a52c68c380e9d5092c72ea79f0007d1950ea008b3",
+            "events.jsonl": "5950eb616bdebaa711c5c073aaae2846a975de5c1ac91e8e6b3c3d239c898a3c"
+          },
+          "atPeakRSS": {
+            "rssBytes": 3140452352,
+            "phase": "first-queries",
+            "byKind": {
+              "jman": 18112512,
+              "gradle": 733978624,
+              "jdtls": 2388361216
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 16109568.0,
+              "jdtls": 1941352448.0,
+              "gradle": 770584576.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 770584576.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 1,
+          "host": {
+            "minAvailableBytes": 28422451200,
+            "peakSwapUsedBytes": 0,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          }
+        },
+        {
+          "trial": "003-3-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 3,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 8930902016,
+          "peakPSSBytes": 8485441536,
+          "availableSamples": 602,
+          "pssSamples": 594,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 169.48534432399993,
+              "latency": {
+                "count": 3,
+                "p50Seconds": 169.29312195300008,
+                "p95Seconds": 169.48269989299934,
+                "maxSeconds": 169.48269989299934
+              },
+              "commands": 3,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 153.63309598600063,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 2.0565890900006707,
+                "p95Seconds": 150.77903139299997,
+                "maxSeconds": 150.77903139299997
+              },
+              "commands": 9,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 11.482723272999465,
+              "latency": {
+                "count": 27,
+                "p50Seconds": 1.0594538550003563,
+                "p95Seconds": 2.520914203999382,
+                "maxSeconds": 2.5436005969995676
+              },
+              "commands": 27,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 169.64010156600034,
+              "samples": 280,
+              "meanRSSBytes": 5336081993.142858,
+              "peakRSSBytes": 8930902016,
+              "peakPSSBytes": 8485441536,
+              "lastRSSBytes": 8335458304,
+              "lastPSSBytes": 7896460288
+            },
+            "first-queries": {
+              "seconds": 153.86842172199977,
+              "samples": 248,
+              "meanRSSBytes": 5399912249.806452,
+              "peakRSSBytes": 8345366528,
+              "peakPSSBytes": 7901966336,
+              "lastRSSBytes": 6580600832,
+              "lastPSSBytes": 6178692096
+            },
+            "steady": {
+              "seconds": 3.2107537840001896,
+              "samples": 11,
+              "meanRSSBytes": 6580600832.0,
+              "peakRSSBytes": 6580600832,
+              "peakPSSBytes": 6178696192,
+              "lastRSSBytes": 6580600832,
+              "lastPSSBytes": 6178696192
+            },
+            "warm-queries": {
+              "seconds": 11.72843202599961,
+              "samples": 30,
+              "meanRSSBytes": 6624675703.466666,
+              "peakRSSBytes": 6643126272,
+              "peakPSSBytes": 6236426240,
+              "lastRSSBytes": 6632534016,
+              "lastPSSBytes": 6230572032
+            },
+            "after-stop": {
+              "seconds": 3.0607115460006753,
+              "samples": 13,
+              "meanRSSBytes": 675274752.0,
+              "peakRSSBytes": 675274752,
+              "peakPSSBytes": 674233344,
+              "lastRSSBytes": 675274752,
+              "lastPSSBytes": 674233344
+            },
+            "after-cleanup": {
+              "seconds": 0.08779611599948112,
+              "samples": 3,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "9accbfaea90a12ae1056430dbabf9083157ef59afd42c10db13c8cca354a2e17",
+            "resources.jsonl": "417b09d2b3e1a88365408fa27719530145636813c8e68165e2e5b8dabb54758a",
+            "events.jsonl": "6a246a4ff01557ed367fcbc2f4ae8eb8ca50ae4b7d11f7856f4bee44176b101a"
+          },
+          "atPeakRSS": {
+            "rssBytes": 8930902016,
+            "phase": "cold-prepare",
+            "byKind": {
+              "jman": 16482304,
+              "gradle": 1440182272,
+              "jdtls": 7474237440
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 23511040.0,
+              "jdtls": 5881815040.0,
+              "gradle": 675274752.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 675274752.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 3,
+          "host": {
+            "minAvailableBytes": 22986461184,
+            "peakSwapUsedBytes": 0,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          }
+        },
+        {
+          "trial": "003-5-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 5,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 13073420288,
+          "peakPSSBytes": 12097884160,
+          "availableSamples": 777,
+          "pssSamples": 757,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 337.6498613849999,
+              "latency": {
+                "count": 5,
+                "p50Seconds": 318.10258685200006,
+                "p95Seconds": 337.64680051100004,
+                "maxSeconds": 337.64680051100004
+              },
+              "commands": 5,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 313.12111860999994,
+              "latency": {
+                "count": 15,
+                "p50Seconds": 1.9415768239996396,
+                "p95Seconds": 310.0635697380003,
+                "maxSeconds": 310.0635697380003
+              },
+              "commands": 15,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 15.26837673800037,
+              "latency": {
+                "count": 45,
+                "p50Seconds": 1.084092528999463,
+                "p95Seconds": 4.302813440000136,
+                "maxSeconds": 5.054272980999485
+              },
+              "commands": 45,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 337.8661020420004,
+              "samples": 400,
+              "meanRSSBytes": 7894219714.56,
+              "peakRSSBytes": 13073420288,
+              "peakPSSBytes": 12097884160,
+              "lastRSSBytes": 12144844800,
+              "lastPSSBytes": 11345128448
+            },
+            "first-queries": {
+              "seconds": 313.3419671849997,
+              "samples": 308,
+              "meanRSSBytes": 8796259168.415585,
+              "peakRSSBytes": 12654755840,
+              "peakPSSBytes": 11888192512,
+              "lastRSSBytes": 12392366080,
+              "lastPSSBytes": 11631976448
+            },
+            "steady": {
+              "seconds": 3.2248157960002573,
+              "samples": 9,
+              "meanRSSBytes": 12391327971.555555,
+              "peakRSSBytes": 12392497152,
+              "peakPSSBytes": 11631976448,
+              "lastRSSBytes": 12381974528,
+              "lastPSSBytes": 11621183488
+            },
+            "warm-queries": {
+              "seconds": 15.492688870000165,
+              "samples": 24,
+              "meanRSSBytes": 12435628544.0,
+              "peakRSSBytes": 12578430976,
+              "peakPSSBytes": 11814904832,
+              "lastRSSBytes": 12264226816,
+              "lastPSSBytes": 11503890432
+            },
+            "after-stop": {
+              "seconds": 3.043352849999792,
+              "samples": 13,
+              "meanRSSBytes": 837705728.0,
+              "peakRSSBytes": 837705728,
+              "peakPSSBytes": 836178944,
+              "lastRSSBytes": 837705728,
+              "lastPSSBytes": 836178944
+            },
+            "after-cleanup": {
+              "seconds": 0.1128619239998443,
+              "samples": 3,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "e9a61066ba39a8d28dbb51feb3c23b61ad899e4e778761095cd902eb57901be7",
+            "resources.jsonl": "06f3dc33db8c58baaa1e7c9739f21f4c4a98d8df291c03b45687a422bd054862",
+            "events.jsonl": "225ecec1b01fa1a18103d74099f694fb14d7fb1145ef818d294f7f325c32a262"
+          },
+          "atPeakRSS": {
+            "rssBytes": 13073420288,
+            "phase": "cold-prepare",
+            "byKind": {
+              "jman": 25464832,
+              "jdtls": 10574458880,
+              "gradle": 2473496576
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 29069312.0,
+              "jdtls": 11524360419.555555,
+              "gradle": 837898240.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 837705728.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 5,
+          "host": {
+            "minAvailableBytes": 19423997952,
+            "peakSwapUsedBytes": 0,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          }
+        }
+      ]
+    },
+    "sequential": {
+      "projectCommit": "079896035e13d2e27c13bc63e39877e5924c3854",
+      "jmanExecutableSHA256": "9035531c5d3e7f2127531f3dcb30d04fc85fd83a5128ecc1ee27343b5a662636",
+      "parameters": {
+        "sessions": "1,3,5",
+        "repetitions": 3,
+        "startup": "sequential",
+        "timeout": 600.0,
+        "query_rounds": 3,
+        "refresh_rounds": 0,
+        "steady_seconds": 3,
+        "idle_seconds": 0,
+        "idle_timeout": 900,
+        "lifecycle": false,
+        "sample_period": 0.2,
+        "jdtls_max_heap_mib": null
+      },
+      "trials": [
+        {
+          "trial": "001-1-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 1,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 3080462336,
+          "peakPSSBytes": 3032801280,
+          "availableSamples": 451,
+          "pssSamples": 450,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 59.320286520999616,
+              "latency": {
+                "count": 1,
+                "p50Seconds": 59.318994967000435,
+                "p95Seconds": 59.318994967000435,
+                "maxSeconds": 59.318994967000435
+              },
+              "commands": 1,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 54.33456145499986,
+              "latency": {
+                "count": 3,
+                "p50Seconds": 1.1844416869998895,
+                "p95Seconds": 52.12503588399977,
+                "maxSeconds": 52.12503588399977
+              },
+              "commands": 3,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 9.17435309800021,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 1.013363140000365,
+                "p95Seconds": 1.3525878829996145,
+                "maxSeconds": 1.3525878829996145
+              },
+              "commands": 9,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 59.42052151600001,
+              "samples": 197,
+              "meanRSSBytes": 1958963771.7766497,
+              "peakRSSBytes": 2892181504,
+              "peakPSSBytes": 2844955648,
+              "lastRSSBytes": 2798325760,
+              "lastPSSBytes": 2754545664
+            },
+            "first-queries": {
+              "seconds": 54.426731227000346,
+              "samples": 179,
+              "meanRSSBytes": 2350643074.1452513,
+              "peakRSSBytes": 3080462336,
+              "peakPSSBytes": 3032801280,
+              "lastRSSBytes": 2750492672,
+              "lastPSSBytes": 2706427904
+            },
+            "steady": {
+              "seconds": 3.1094553039993116,
+              "samples": 12,
+              "meanRSSBytes": 2751722154.6666665,
+              "peakRSSBytes": 2753769472,
+              "peakPSSBytes": 2709311488,
+              "lastRSSBytes": 2741485568,
+              "lastPSSBytes": 2696986624
+            },
+            "warm-queries": {
+              "seconds": 9.276302837000003,
+              "samples": 34,
+              "meanRSSBytes": 2786923218.8235292,
+              "peakRSSBytes": 2809364480,
+              "peakPSSBytes": 2760847360,
+              "lastRSSBytes": 2761031680,
+              "lastPSSBytes": 2716389376
+            },
+            "after-stop": {
+              "seconds": 3.0430339280001135,
+              "samples": 13,
+              "meanRSSBytes": 775610368.0,
+              "peakRSSBytes": 775610368,
+              "peakPSSBytes": 773954560,
+              "lastRSSBytes": 775610368,
+              "lastPSSBytes": 773856256
+            },
+            "after-cleanup": {
+              "seconds": 0.05755962900002487,
+              "samples": 2,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "f12d538df50286be821a9f455d8cf058e40ccf92f6c054be0f56760ae92e1e7e",
+            "resources.jsonl": "3e45064bf118610599ebe53b41d888ca5b2a1f76f9848ca6b4cda811250d3d09",
+            "events.jsonl": "39a469c85266ab344deb4ad3503912c759c6c4e30cd7492ef078e5bf33c2e06b"
+          },
+          "atPeakRSS": {
+            "rssBytes": 3080462336,
+            "phase": "first-queries",
+            "byKind": {
+              "jman": 15474688,
+              "gradle": 775610368,
+              "jdtls": 2289377280
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 15929344.0,
+              "jdtls": 1960182442.6666667,
+              "gradle": 775610368.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 775610368.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 1,
+          "host": {
+            "minAvailableBytes": 28293464064,
+            "peakSwapUsedBytes": 0,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          }
+        },
+        {
+          "trial": "001-3-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 3,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 7310077952,
+          "peakPSSBytes": 6904809472,
+          "availableSamples": 806,
+          "pssSamples": 796,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 157.74682886999926,
+              "latency": {
+                "count": 3,
+                "p50Seconds": 50.761354989999745,
+                "p95Seconds": 57.73352637800053,
+                "maxSeconds": 57.73352637800053
+              },
+              "commands": 3,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 160.7387386219998,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 1.4516401989994847,
+                "p95Seconds": 158.40028627500033,
+                "maxSeconds": 158.40028627500033
+              },
+              "commands": 9,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 11.60299317099998,
+              "latency": {
+                "count": 27,
+                "p50Seconds": 1.0434688330005883,
+                "p95Seconds": 2.3771410790004666,
+                "maxSeconds": 2.822013359000266
+              },
+              "commands": 27,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 157.9021025560005,
+              "samples": 464,
+              "meanRSSBytes": 4024952019.862069,
+              "peakRSSBytes": 7310077952,
+              "peakPSSBytes": 6904809472,
+              "lastRSSBytes": 7113027584,
+              "lastPSSBytes": 6710536192
+            },
+            "first-queries": {
+              "seconds": 160.95985750099953,
+              "samples": 269,
+              "meanRSSBytes": 5494637716.460966,
+              "peakRSSBytes": 7212273664,
+              "peakPSSBytes": 6805288960,
+              "lastRSSBytes": 6899998720,
+              "lastPSSBytes": 6496863232
+            },
+            "steady": {
+              "seconds": 3.2848436109998147,
+              "samples": 11,
+              "meanRSSBytes": 6894261713.454545,
+              "peakRSSBytes": 6899998720,
+              "peakPSSBytes": 6496863232,
+              "lastRSSBytes": 6890983424,
+              "lastPSSBytes": 6487835648
+            },
+            "warm-queries": {
+              "seconds": 11.868569146000482,
+              "samples": 30,
+              "meanRSSBytes": 6980618649.6,
+              "peakRSSBytes": 7055396864,
+              "peakPSSBytes": 6649363456,
+              "lastRSSBytes": 6884659200,
+              "lastPSSBytes": 6480675840
+            },
+            "after-stop": {
+              "seconds": 3.07085559799998,
+              "samples": 14,
+              "meanRSSBytes": 846245888.0,
+              "peakRSSBytes": 846245888,
+              "peakPSSBytes": 844352512,
+              "lastRSSBytes": 846245888,
+              "lastPSSBytes": 844352512
+            },
+            "after-cleanup": {
+              "seconds": 0.05856187900008081,
+              "samples": 2,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "347bd5902a509026f3b8bb27753e3ff486580a2508f844a8a44f2d2efdfad75b",
+            "resources.jsonl": "031a63c3b2d3afc2b63fe4409a6f2f5e397ffebc2a95eb2b657b215716fa8147",
+            "events.jsonl": "8cb0103d07b32e30c9a8c3c8fb6b625f53ba252d7bd45d277b881032e76f86b6"
+          },
+          "atPeakRSS": {
+            "rssBytes": 7310077952,
+            "phase": "cold-prepare",
+            "byKind": {
+              "jman": 20152320,
+              "gradle": 833777664,
+              "jdtls": 6456147968
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 22425600.0,
+              "jdtls": 6025590225.454545,
+              "gradle": 846245888.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 846245888.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 3,
+          "host": {
+            "minAvailableBytes": 24422690816,
+            "peakSwapUsedBytes": 0,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          }
+        },
+        {
+          "trial": "001-5-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 5,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 12715958272,
+          "peakPSSBytes": 11950545920,
+          "availableSamples": 1052,
+          "pssSamples": 1040,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 254.40236372399977,
+              "latency": {
+                "count": 5,
+                "p50Seconds": 49.105699502999414,
+                "p95Seconds": 58.010512466000364,
+                "maxSeconds": 58.010512466000364
+              },
+              "commands": 5,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 287.7285740690004,
+              "latency": {
+                "count": 15,
+                "p50Seconds": 2.156552925000142,
+                "p95Seconds": 285.48328135799966,
+                "maxSeconds": 285.48328135799966
+              },
+              "commands": 15,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 12.4891337629997,
+              "latency": {
+                "count": 45,
+                "p50Seconds": 1.067543867000495,
+                "p95Seconds": 2.7529579800002466,
+                "maxSeconds": 2.8307830889998513
+              },
+              "commands": 45,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 254.70157386499977,
+              "samples": 684,
+              "meanRSSBytes": 5741070024.608187,
+              "peakRSSBytes": 11263455232,
+              "peakPSSBytes": 10530961408,
+              "lastRSSBytes": 10839867392,
+              "lastPSSBytes": 10077512704
+            },
+            "first-queries": {
+              "seconds": 288.1313764759998,
+              "samples": 302,
+              "meanRSSBytes": 8557427583.152318,
+              "peakRSSBytes": 12715958272,
+              "peakPSSBytes": 11950545920,
+              "lastRSSBytes": 12327329792,
+              "lastPSSBytes": 11567016960
+            },
+            "steady": {
+              "seconds": 3.2180079899999328,
+              "samples": 9,
+              "meanRSSBytes": 12327329792.0,
+              "peakRSSBytes": 12327329792,
+              "peakPSSBytes": 11567016960,
+              "lastRSSBytes": 12327329792,
+              "lastPSSBytes": 11563888640
+            },
+            "warm-queries": {
+              "seconds": 12.694786295000085,
+              "samples": 23,
+              "meanRSSBytes": 12426772658.086956,
+              "peakRSSBytes": 12475752448,
+              "peakPSSBytes": 11710426112,
+              "lastRSSBytes": 12461318144,
+              "lastPSSBytes": 11701697536
+            },
+            "after-stop": {
+              "seconds": 3.1039714240005196,
+              "samples": 14,
+              "meanRSSBytes": 938668032.0,
+              "peakRSSBytes": 938668032,
+              "peakPSSBytes": 936905728,
+              "lastRSSBytes": 938668032,
+              "lastPSSBytes": 936905728
+            },
+            "after-cleanup": {
+              "seconds": 0.06315273899963358,
+              "samples": 2,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "fb3dcfcb42b2329e9da15a028fd8e8b7976c11ed8841470b4df72a82b94abbc1",
+            "resources.jsonl": "293ff17417fb69ae5da5971a7ee924212de99e4ea2c99a9fe43c2dbad75e6d90",
+            "events.jsonl": "d7aca971827ed79564b9a1f5b39982e1ea753ca69541d1243fd127805bdc81ab"
+          },
+          "atPeakRSS": {
+            "rssBytes": 12715958272,
+            "phase": "first-queries",
+            "byKind": {
+              "jman": 30208000,
+              "gradle": 938668032,
+              "jdtls": 11747082240
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 27836416.0,
+              "jdtls": 11360825344.0,
+              "gradle": 938668032.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 938668032.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 5,
+          "host": {
+            "minAvailableBytes": 19304435712,
+            "peakSwapUsedBytes": 8192,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 2,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 25367.0,
+              "full": 24909.0
+            }
+          }
+        },
+        {
+          "trial": "002-1-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 1,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 3279081472,
+          "peakPSSBytes": 3230978048,
+          "availableSamples": 448,
+          "pssSamples": 446,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 59.13055513699965,
+              "latency": {
+                "count": 1,
+                "p50Seconds": 59.129109611000786,
+                "p95Seconds": 59.129109611000786,
+                "maxSeconds": 59.129109611000786
+              },
+              "commands": 1,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 54.702094825999666,
+              "latency": {
+                "count": 3,
+                "p50Seconds": 1.2004541169999356,
+                "p95Seconds": 52.39569189000031,
+                "maxSeconds": 52.39569189000031
+              },
+              "commands": 3,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 8.926227222998932,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 1.004547091999484,
+                "p95Seconds": 1.2802954580001824,
+                "maxSeconds": 1.2802954580001824
+              },
+              "commands": 9,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 59.215148104000036,
+              "samples": 198,
+              "meanRSSBytes": 1991342162.7474747,
+              "peakRSSBytes": 2969772032,
+              "peakPSSBytes": 2925363200,
+              "lastRSSBytes": 2969772032,
+              "lastPSSBytes": 2925363200
+            },
+            "first-queries": {
+              "seconds": 54.802421958000195,
+              "samples": 177,
+              "meanRSSBytes": 2428315243.028249,
+              "peakRSSBytes": 3257421824,
+              "peakPSSBytes": 3212472320,
+              "lastRSSBytes": 3257421824,
+              "lastPSSBytes": 3212472320
+            },
+            "steady": {
+              "seconds": 3.089170193999962,
+              "samples": 12,
+              "meanRSSBytes": 3249388202.6666665,
+              "peakRSSBytes": 3260043264,
+              "peakPSSBytes": 3215134720,
+              "lastRSSBytes": 3228700672,
+              "lastPSSBytes": 3183783936
+            },
+            "warm-queries": {
+              "seconds": 9.010696391000238,
+              "samples": 33,
+              "meanRSSBytes": 2976705194.6666665,
+              "peakRSSBytes": 3279081472,
+              "peakPSSBytes": 3230978048,
+              "lastRSSBytes": 2928107520,
+              "lastPSSBytes": 2879949824
+            },
+            "after-stop": {
+              "seconds": 3.0661622309999075,
+              "samples": 13,
+              "meanRSSBytes": 792428544.0,
+              "peakRSSBytes": 792428544,
+              "peakPSSBytes": 790836224,
+              "lastRSSBytes": 792428544,
+              "lastPSSBytes": 790737920
+            },
+            "after-cleanup": {
+              "seconds": 0.05789429099968402,
+              "samples": 2,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "d8d35ffd43bc36908c362f26e75949cd468c63eb266013982b66d8ddb4ea4937",
+            "resources.jsonl": "db74f4e5a07fda8635958e4260d6d6602e32a413f7fca0b6a65b5d89692f74b4",
+            "events.jsonl": "1200596b05ba2fb9d2e2010021bed9dfb1ada26262c8a5ad2f31a2ccdd948910"
+          },
+          "atPeakRSS": {
+            "rssBytes": 3279081472,
+            "phase": "warm-queries",
+            "byKind": {
+              "jman": 18464768,
+              "gradle": 792428544,
+              "jdtls": 2468188160
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 16187392.0,
+              "jdtls": 2440772266.6666665,
+              "gradle": 792428544.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 792428544.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 1,
+          "host": {
+            "minAvailableBytes": 28037283840,
+            "peakSwapUsedBytes": 8192,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          }
+        },
+        {
+          "trial": "002-3-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 3,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 7479373824,
+          "peakPSSBytes": 7042913280,
+          "availableSamples": 803,
+          "pssSamples": 796,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 156.87911151800108,
+              "latency": {
+                "count": 3,
+                "p50Seconds": 49.85082925399911,
+                "p95Seconds": 57.80928224799936,
+                "maxSeconds": 57.80928224799936
+              },
+              "commands": 3,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 152.90481901199928,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 2.0234319040009723,
+                "p95Seconds": 150.7705007679997,
+                "maxSeconds": 150.7705007679997
+              },
+              "commands": 9,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 12.266102499001136,
+              "latency": {
+                "count": 27,
+                "p50Seconds": 1.0652737429991248,
+                "p95Seconds": 3.0894485190001433,
+                "maxSeconds": 3.1137172270009614
+              },
+              "commands": 27,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 157.03480079099972,
+              "samples": 464,
+              "meanRSSBytes": 3927375227.586207,
+              "peakRSSBytes": 7441965056,
+              "peakPSSBytes": 7042913280,
+              "lastRSSBytes": 6996946944,
+              "lastPSSBytes": 6594526208
+            },
+            "first-queries": {
+              "seconds": 153.06296900500092,
+              "samples": 266,
+              "meanRSSBytes": 5484407861.894737,
+              "peakRSSBytes": 7479373824,
+              "peakPSSBytes": 7040316416,
+              "lastRSSBytes": 6973145088,
+              "lastPSSBytes": 6571465728
+            },
+            "steady": {
+              "seconds": 3.2902228989987634,
+              "samples": 11,
+              "meanRSSBytes": 6964563968.0,
+              "peakRSSBytes": 6964563968,
+              "peakPSSBytes": 6561963008,
+              "lastRSSBytes": 6964563968,
+              "lastPSSBytes": 6561954816
+            },
+            "warm-queries": {
+              "seconds": 12.410481811000864,
+              "samples": 30,
+              "meanRSSBytes": 7064207223.466666,
+              "peakRSSBytes": 7118643200,
+              "peakPSSBytes": 6710966272,
+              "lastRSSBytes": 6934020096,
+              "lastPSSBytes": 6530952192
+            },
+            "after-stop": {
+              "seconds": 3.0446727010003087,
+              "samples": 13,
+              "meanRSSBytes": 897900544.0,
+              "peakRSSBytes": 897900544,
+              "peakPSSBytes": 896195584,
+              "lastRSSBytes": 897900544,
+              "lastPSSBytes": 896195584
+            },
+            "after-cleanup": {
+              "seconds": 0.05800624000039534,
+              "samples": 2,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "0b7d5994fd72b362729dbe5a2af19d0262608adba9b19a8a2cc24e70fecceff6",
+            "resources.jsonl": "5cc1ab34a64982730c91509c9cb9816a3762b6ecfea9dfdc76eee9cf6eb3d7eb",
+            "events.jsonl": "e2fddc838915e0fb2765cb438292ec4d1974a6054d47756b48674e0ce1a12d0c"
+          },
+          "atPeakRSS": {
+            "rssBytes": 7479373824,
+            "phase": "first-queries",
+            "byKind": {
+              "jman": 21442560,
+              "gradle": 897900544,
+              "jdtls": 6560030720
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 22925312.0,
+              "jdtls": 6043738112.0,
+              "gradle": 897900544.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 897900544.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 2,
+          "host": {
+            "minAvailableBytes": 24134615040,
+            "peakSwapUsedBytes": 8192,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          }
+        },
+        {
+          "trial": "002-5-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 5,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 12478361600,
+          "peakPSSBytes": 11758334976,
+          "availableSamples": 1087,
+          "pssSamples": 1072,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 255.8774859669993,
+              "latency": {
+                "count": 5,
+                "p50Seconds": 49.86305315000027,
+                "p95Seconds": 61.54644342300162,
+                "maxSeconds": 61.54644342300162
+              },
+              "commands": 5,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 288.9655447009991,
+              "latency": {
+                "count": 15,
+                "p50Seconds": 1.9185463929989055,
+                "p95Seconds": 286.8011452440005,
+                "maxSeconds": 286.8011452440005
+              },
+              "commands": 15,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 14.528359433999867,
+              "latency": {
+                "count": 45,
+                "p50Seconds": 1.3525246860008338,
+                "p95Seconds": 3.0087265920010395,
+                "maxSeconds": 3.0632148470012908
+              },
+              "commands": 45,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 256.09602896700017,
+              "samples": 708,
+              "meanRSSBytes": 5663679892.971751,
+              "peakRSSBytes": 11305209856,
+              "peakPSSBytes": 10571748352,
+              "lastRSSBytes": 11048910848,
+              "lastPSSBytes": 10287952896
+            },
+            "first-queries": {
+              "seconds": 289.1936058280007,
+              "samples": 311,
+              "meanRSSBytes": 8469824027.987138,
+              "peakRSSBytes": 12478361600,
+              "peakPSSBytes": 11758334976,
+              "lastRSSBytes": 12340797440,
+              "lastPSSBytes": 11580520448
+            },
+            "steady": {
+              "seconds": 3.2146168399995076,
+              "samples": 9,
+              "meanRSSBytes": 12340797440.0,
+              "peakRSSBytes": 12340797440,
+              "peakPSSBytes": 11580520448,
+              "lastRSSBytes": 12340797440,
+              "lastPSSBytes": 11564972032
+            },
+            "warm-queries": {
+              "seconds": 14.753453961999185,
+              "samples": 25,
+              "meanRSSBytes": 12113463377.92,
+              "peakRSSBytes": 12364935168,
+              "peakPSSBytes": 11602330624,
+              "lastRSSBytes": 12001931264,
+              "lastPSSBytes": 11241801728
+            },
+            "after-stop": {
+              "seconds": 3.0441581689992745,
+              "samples": 13,
+              "meanRSSBytes": 860958720.0,
+              "peakRSSBytes": 860958720,
+              "peakPSSBytes": 859272192,
+              "lastRSSBytes": 860958720,
+              "lastPSSBytes": 859272192
+            },
+            "after-cleanup": {
+              "seconds": 0.10833902900048997,
+              "samples": 3,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "f4c827d8d6e90bbcd9015d0030a2642b307d4a26142d417ebe83f0d11575f283",
+            "resources.jsonl": "f2dad9ee1549d40cc09df8678c8dc350df4a780bd2a9b2e1c37457f54affc26c",
+            "events.jsonl": "6e44aec316ff04d3eb2696eaa94353d76647c771f41a3f809e6f4c1c8b5ca779"
+          },
+          "atPeakRSS": {
+            "rssBytes": 12478361600,
+            "phase": "first-queries",
+            "byKind": {
+              "jman": 28631040,
+              "gradle": 860958720,
+              "jdtls": 11588771840
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 27983872.0,
+              "jdtls": 11451854848.0,
+              "gradle": 860958720.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 860958720.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 5,
+          "host": {
+            "minAvailableBytes": 19454586880,
+            "peakSwapUsedBytes": 1552384,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 377,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 103350.0,
+              "full": 99468.0
+            }
+          }
+        },
+        {
+          "trial": "003-1-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 1,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 3086057472,
+          "peakPSSBytes": 3038348288,
+          "availableSamples": 446,
+          "pssSamples": 445,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 58.87886862400046,
+              "latency": {
+                "count": 1,
+                "p50Seconds": 58.87740742799906,
+                "p95Seconds": 58.87740742799906,
+                "maxSeconds": 58.87740742799906
+              },
+              "commands": 1,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 54.575027290000435,
+              "latency": {
+                "count": 3,
+                "p50Seconds": 1.2415019620002568,
+                "p95Seconds": 52.20896086200082,
+                "maxSeconds": 52.20896086200082
+              },
+              "commands": 3,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 8.880695944000763,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 1.0057124649993057,
+                "p95Seconds": 1.2684553409999353,
+                "maxSeconds": 1.2684553409999353
+              },
+              "commands": 9,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 58.970055530000536,
+              "samples": 195,
+              "meanRSSBytes": 1904348847.9179487,
+              "peakRSSBytes": 2850717696,
+              "peakPSSBytes": 2803015680,
+              "lastRSSBytes": 2690555904,
+              "lastPSSBytes": 2648990720
+            },
+            "first-queries": {
+              "seconds": 54.66285598600007,
+              "samples": 178,
+              "meanRSSBytes": 2366056816.179775,
+              "peakRSSBytes": 3086057472,
+              "peakPSSBytes": 3038348288,
+              "lastRSSBytes": 2730389504,
+              "lastPSSBytes": 2683015168
+            },
+            "steady": {
+              "seconds": 3.10855946799893,
+              "samples": 12,
+              "meanRSSBytes": 2719793152.0,
+              "peakRSSBytes": 2730520576,
+              "peakPSSBytes": 2686178304,
+              "lastRSSBytes": 2698338304,
+              "lastPSSBytes": 2653922304
+            },
+            "warm-queries": {
+              "seconds": 8.969072551999488,
+              "samples": 33,
+              "meanRSSBytes": 2757539653.818182,
+              "peakRSSBytes": 2768273408,
+              "peakPSSBytes": 2720390144,
+              "lastRSSBytes": 2766991360,
+              "lastPSSBytes": 2719214592
+            },
+            "after-stop": {
+              "seconds": 3.046602675000031,
+              "samples": 13,
+              "meanRSSBytes": 787990370.4615384,
+              "peakRSSBytes": 788078592,
+              "peakPSSBytes": 786514944,
+              "lastRSSBytes": 787935232,
+              "lastPSSBytes": 786416640
+            },
+            "after-cleanup": {
+              "seconds": 0.11209620900081063,
+              "samples": 3,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "89ce6903a6dbba1fd499ec85bce8a4f3c97942bf781458e3bd8132fa30cc0269",
+            "resources.jsonl": "d667aa3be0cfaf1732d43dd5b55ff4c409f49149c6b7527e9fb8f481536c3be3",
+            "events.jsonl": "41e9426a24fa69f61ea67ce26bd7eb3fe88b12e8b379955fa2e5ed610087f492"
+          },
+          "atPeakRSS": {
+            "rssBytes": 3086057472,
+            "phase": "first-queries",
+            "byKind": {
+              "jman": 14913536,
+              "gradle": 788078592,
+              "jdtls": 2283065344
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 15839232.0,
+              "jdtls": 1915875328.0,
+              "gradle": 788078592.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 787990370.4615384,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 1,
+          "host": {
+            "minAvailableBytes": 28180443136,
+            "peakSwapUsedBytes": 1552384,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          }
+        },
+        {
+          "trial": "003-3-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 3,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 7439761408,
+          "peakPSSBytes": 7034338304,
+          "availableSamples": 828,
+          "pssSamples": 822,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 161.61229405599988,
+              "latency": {
+                "count": 3,
+                "p50Seconds": 49.60212935000163,
+                "p95Seconds": 62.843126697000116,
+                "maxSeconds": 62.843126697000116
+              },
+              "commands": 3,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 167.4287694779996,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 1.4236101709993818,
+                "p95Seconds": 165.15815197899974,
+                "maxSeconds": 165.15815197899974
+              },
+              "commands": 9,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 11.205584100000124,
+              "latency": {
+                "count": 27,
+                "p50Seconds": 1.0627897729991673,
+                "p95Seconds": 2.46279267600039,
+                "maxSeconds": 2.463517218000561
+              },
+              "commands": 27,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 161.89101886699973,
+              "samples": 467,
+              "meanRSSBytes": 3996015131.4089937,
+              "peakRSSBytes": 7439761408,
+              "peakPSSBytes": 7034338304,
+              "lastRSSBytes": 7138770944,
+              "lastPSSBytes": 6736068608
+            },
+            "first-queries": {
+              "seconds": 167.61510909800018,
+              "samples": 291,
+              "meanRSSBytes": 5495725460.673539,
+              "peakRSSBytes": 7417954304,
+              "peakPSSBytes": 6969612288,
+              "lastRSSBytes": 7129415680,
+              "lastPSSBytes": 6726007808
+            },
+            "steady": {
+              "seconds": 3.1488241690003633,
+              "samples": 10,
+              "meanRSSBytes": 7129677824.0,
+              "peakRSSBytes": 7129677824,
+              "peakPSSBytes": 6726020096,
+              "lastRSSBytes": 7129677824,
+              "lastPSSBytes": 6722864128
+            },
+            "warm-queries": {
+              "seconds": 11.369948273999398,
+              "samples": 28,
+              "meanRSSBytes": 7229849307.428572,
+              "peakRSSBytes": 7251329024,
+              "peakPSSBytes": 6845361152,
+              "lastRSSBytes": 7248183296,
+              "lastPSSBytes": 6845361152
+            },
+            "after-stop": {
+              "seconds": 3.1094579750006233,
+              "samples": 14,
+              "meanRSSBytes": 853311488.0,
+              "peakRSSBytes": 853311488,
+              "peakPSSBytes": 851813376,
+              "lastRSSBytes": 853311488,
+              "lastPSSBytes": 851813376
+            },
+            "after-cleanup": {
+              "seconds": 0.06021402599981229,
+              "samples": 2,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "5b3243327a724e1ac71818da4aaf90f80a4dd0cf75b7a976610a5c7283970351",
+            "resources.jsonl": "ee7f20538be265f476bb3ea6bfc50273d05bb4c9d45ceddc58e2f79e5f2e5b76",
+            "events.jsonl": "eb288c6f2480c06bf6f72bf0b2977e846c073813fa19e4b2a71db5c11684181d"
+          },
+          "atPeakRSS": {
+            "rssBytes": 7439761408,
+            "phase": "cold-prepare",
+            "byKind": {
+              "jman": 19644416,
+              "gradle": 843169792,
+              "jdtls": 6576947200
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 23015424.0,
+              "jdtls": 6253350912.0,
+              "gradle": 853311488.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 853311488.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 3,
+          "host": {
+            "minAvailableBytes": 24155881472,
+            "peakSwapUsedBytes": 1552384,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          }
+        },
+        {
+          "trial": "003-5-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 5,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 12715360256,
+          "peakPSSBytes": 11950040064,
+          "availableSamples": 1036,
+          "pssSamples": 1017,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 254.1644138979991,
+              "latency": {
+                "count": 5,
+                "p50Seconds": 49.9148009569999,
+                "p95Seconds": 58.36608369100031,
+                "maxSeconds": 58.36608369100031
+              },
+              "commands": 5,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 287.4780655570012,
+              "latency": {
+                "count": 15,
+                "p50Seconds": 1.5696406360002584,
+                "p95Seconds": 285.11180487899946,
+                "maxSeconds": 285.11180487899946
+              },
+              "commands": 15,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 15.340090146000875,
+              "latency": {
+                "count": 45,
+                "p50Seconds": 1.1023900079999294,
+                "p95Seconds": 3.890316786000767,
+                "maxSeconds": 4.115944404000402
+              },
+              "commands": 45,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 254.43059796099988,
+              "samples": 674,
+              "meanRSSBytes": 5814047473.566766,
+              "peakRSSBytes": 11144552448,
+              "peakPSSBytes": 10382045184,
+              "lastRSSBytes": 11144552448,
+              "lastPSSBytes": 10382045184
+            },
+            "first-queries": {
+              "seconds": 287.82317897100074,
+              "samples": 295,
+              "meanRSSBytes": 8311324019.416949,
+              "peakRSSBytes": 12715360256,
+              "peakPSSBytes": 11950040064,
+              "lastRSSBytes": 12478021632,
+              "lastPSSBytes": 11709527040
+            },
+            "steady": {
+              "seconds": 3.2337579429986363,
+              "samples": 9,
+              "meanRSSBytes": 12469624832.0,
+              "peakRSSBytes": 12469624832,
+              "peakPSSBytes": 11709527040,
+              "lastRSSBytes": 12469624832,
+              "lastPSSBytes": 11709522944
+            },
+            "warm-queries": {
+              "seconds": 15.548619587001667,
+              "samples": 24,
+              "meanRSSBytes": 12176572928.0,
+              "peakRSSBytes": 12479004672,
+              "peakPSSBytes": 11718565888,
+              "lastRSSBytes": 11923374080,
+              "lastPSSBytes": 11159348224
+            },
+            "after-stop": {
+              "seconds": 3.1139464269999735,
+              "samples": 14,
+              "meanRSSBytes": 739033088.0,
+              "peakRSSBytes": 739033088,
+              "peakPSSBytes": 737821696,
+              "lastRSSBytes": 739033088,
+              "lastPSSBytes": 737821696
+            },
+            "after-cleanup": {
+              "seconds": 0.05761159000030602,
+              "samples": 2,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "5051a5a1e8530c2c22bc3b8f5dbff5d8b415a292deb0ab3c0665f85c1cebd146",
+            "resources.jsonl": "ca34756dfb9aa4505a8ee9ea7c5bc4b29aeedfa569a3a2cbbd0bd567ad522497",
+            "events.jsonl": "582df5fb3d8952580657a6192e4fb74cce78599d0555b5027ff7b845e25b85ac"
+          },
+          "atPeakRSS": {
+            "rssBytes": 12715360256,
+            "phase": "first-queries",
+            "byKind": {
+              "jman": 31010816,
+              "jdtls": 11945316352,
+              "gradle": 739033088
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 29732864.0,
+              "jdtls": 11700858880.0,
+              "gradle": 739033088.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 739033088.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 5,
+          "host": {
+            "minAvailableBytes": 19210743808,
+            "peakSwapUsedBytes": 1552384,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 110486.0,
+              "full": 104194.0
+            }
+          }
+        }
+      ]
+    },
+    "lifecycle": {
+      "projectCommit": "079896035e13d2e27c13bc63e39877e5924c3854",
+      "jmanExecutableSHA256": "9035531c5d3e7f2127531f3dcb30d04fc85fd83a5128ecc1ee27343b5a662636",
+      "parameters": {
+        "sessions": "1",
+        "repetitions": 1,
+        "startup": "concurrent",
+        "timeout": 600.0,
+        "query_rounds": 3,
+        "refresh_rounds": 3,
+        "steady_seconds": 3,
+        "idle_seconds": 32.0,
+        "idle_timeout": 30.0,
+        "lifecycle": true,
+        "sample_period": 0.2,
+        "jdtls_max_heap_mib": null
+      },
+      "trials": [
+        {
+          "trial": "001-1-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 1,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 3026481152,
+          "peakPSSBytes": 2979280896,
+          "availableSamples": 1257,
+          "pssSamples": 1254,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 59.88091275199986,
+              "latency": {
+                "count": 1,
+                "p50Seconds": 59.87838627099973,
+                "p95Seconds": 59.87838627099973,
+                "maxSeconds": 59.87838627099973
+              },
+              "commands": 1,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 54.943634107000435,
+              "latency": {
+                "count": 3,
+                "p50Seconds": 1.2132379240001683,
+                "p95Seconds": 52.660065844999735,
+                "maxSeconds": 52.660065844999735
+              },
+              "commands": 3,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 9.015114662000087,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 1.0231342150000273,
+                "p95Seconds": 1.2592580789996646,
+                "maxSeconds": 1.2592580789996646
+              },
+              "commands": 9,
+              "failures": 0
+            },
+            "refresh-1": {
+              "wallSeconds": 29.763709271999687,
+              "latency": {
+                "count": 1,
+                "p50Seconds": 29.76168377200065,
+                "p95Seconds": 29.76168377200065,
+                "maxSeconds": 29.76168377200065
+              },
+              "commands": 1,
+              "failures": 0
+            },
+            "queries-after-refresh-1": {
+              "wallSeconds": 10.647429558999647,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 1.04585625800064,
+                "p95Seconds": 2.0420614129998285,
+                "maxSeconds": 2.0420614129998285
+              },
+              "commands": 9,
+              "failures": 0
+            },
+            "refresh-2": {
+              "wallSeconds": 30.09438141499959,
+              "latency": {
+                "count": 1,
+                "p50Seconds": 30.091658123000343,
+                "p95Seconds": 30.091658123000343,
+                "maxSeconds": 30.091658123000343
+              },
+              "commands": 1,
+              "failures": 0
+            },
+            "queries-after-refresh-2": {
+              "wallSeconds": 10.695048332000624,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 0.9863035510006739,
+                "p95Seconds": 2.0587365070005035,
+                "maxSeconds": 2.0587365070005035
+              },
+              "commands": 9,
+              "failures": 0
+            },
+            "refresh-3": {
+              "wallSeconds": 29.922559777999595,
+              "latency": {
+                "count": 1,
+                "p50Seconds": 29.919531544000165,
+                "p95Seconds": 29.919531544000165,
+                "maxSeconds": 29.919531544000165
+              },
+              "commands": 1,
+              "failures": 0
+            },
+            "queries-after-refresh-3": {
+              "wallSeconds": 10.489988932000415,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 1.0513016579998293,
+                "p95Seconds": 1.9391813109996292,
+                "maxSeconds": 1.9391813109996292
+              },
+              "commands": 9,
+              "failures": 0
+            },
+            "eviction": {
+              "wallSeconds": 49.77392938699995,
+              "latency": {
+                "count": 1,
+                "p50Seconds": 49.771974803000376,
+                "p95Seconds": 49.771974803000376,
+                "maxSeconds": 49.771974803000376
+              },
+              "commands": 1,
+              "failures": 0
+            },
+            "reopen": {
+              "wallSeconds": 29.651718867000454,
+              "latency": {
+                "count": 1,
+                "p50Seconds": 29.64874480600065,
+                "p95Seconds": 29.64874480600065,
+                "maxSeconds": 29.64874480600065
+              },
+              "commands": 1,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 60.047522324000056,
+              "samples": 203,
+              "meanRSSBytes": 1850714929.182266,
+              "peakRSSBytes": 2933653504,
+              "peakPSSBytes": 2884151296,
+              "lastRSSBytes": 2625441792,
+              "lastPSSBytes": 2581349376
+            },
+            "first-queries": {
+              "seconds": 55.07903655799964,
+              "samples": 181,
+              "meanRSSBytes": 2306408900.596685,
+              "peakRSSBytes": 2894487552,
+              "peakPSSBytes": 2847107072,
+              "lastRSSBytes": 2890932224,
+              "lastPSSBytes": 2846146560
+            },
+            "steady": {
+              "seconds": 3.1045027489999484,
+              "samples": 12,
+              "meanRSSBytes": 2891718656.0,
+              "peakRSSBytes": 2891718656,
+              "peakPSSBytes": 2846609408,
+              "lastRSSBytes": 2891718656,
+              "lastPSSBytes": 2846609408
+            },
+            "warm-queries": {
+              "seconds": 9.115775364000001,
+              "samples": 33,
+              "meanRSSBytes": 2862553646.5454545,
+              "peakRSSBytes": 2901508096,
+              "peakPSSBytes": 2853576704,
+              "lastRSSBytes": 2861350912,
+              "lastPSSBytes": 2816405504
+            },
+            "refresh-1": {
+              "seconds": 29.929572154000198,
+              "samples": 102,
+              "meanRSSBytes": 1728639337.4117646,
+              "peakRSSBytes": 2862346240,
+              "peakPSSBytes": 2814566400,
+              "lastRSSBytes": 2274521088,
+              "lastPSSBytes": 2231383040
+            },
+            "queries-after-refresh-1": {
+              "seconds": 10.743493361000219,
+              "samples": 39,
+              "meanRSSBytes": 2308739387.076923,
+              "peakRSSBytes": 2324348928,
+              "peakPSSBytes": 2280838144,
+              "lastRSSBytes": 2324348928,
+              "lastPSSBytes": 2280838144
+            },
+            "refresh-2": {
+              "seconds": 30.218195324999215,
+              "samples": 101,
+              "meanRSSBytes": 1773471804.8316832,
+              "peakRSSBytes": 2353496064,
+              "peakPSSBytes": 2314758144,
+              "lastRSSBytes": 2353496064,
+              "lastPSSBytes": 2314758144
+            },
+            "queries-after-refresh-2": {
+              "seconds": 10.795860866000112,
+              "samples": 39,
+              "meanRSSBytes": 2397742841.4358974,
+              "peakRSSBytes": 2418671616,
+              "peakPSSBytes": 2375682048,
+              "lastRSSBytes": 2418520064,
+              "lastPSSBytes": 2375682048
+            },
+            "refresh-3": {
+              "seconds": 30.079670083000565,
+              "samples": 100,
+              "meanRSSBytes": 1757818511.36,
+              "peakRSSBytes": 2419179520,
+              "peakPSSBytes": 2373056512,
+              "lastRSSBytes": 2290524160,
+              "lastPSSBytes": 2254911488
+            },
+            "queries-after-refresh-3": {
+              "seconds": 10.721112727999753,
+              "samples": 39,
+              "meanRSSBytes": 2339111017.025641,
+              "peakRSSBytes": 2350858240,
+              "peakPSSBytes": 2305460224,
+              "lastRSSBytes": 2347896832,
+              "lastPSSBytes": 2305460224
+            },
+            "eviction": {
+              "seconds": 49.864098312999886,
+              "samples": 160,
+              "meanRSSBytes": 2326833664.0,
+              "peakRSSBytes": 3026481152,
+              "peakPSSBytes": 2979280896,
+              "lastRSSBytes": 2723815424,
+              "lastPSSBytes": 2676344832
+            },
+            "reopen": {
+              "seconds": 29.86860368500038,
+              "samples": 101,
+              "meanRSSBytes": 1784817927.6039605,
+              "peakRSSBytes": 2724339712,
+              "peakPSSBytes": 2676365312,
+              "lastRSSBytes": 2346164224,
+              "lastPSSBytes": 2303861760
+            },
+            "idle": {
+              "seconds": 32.060596835999604,
+              "samples": 120,
+              "meanRSSBytes": 2251245568.0,
+              "peakRSSBytes": 2382647296,
+              "peakPSSBytes": 2339619840,
+              "lastRSSBytes": 867643392,
+              "lastPSSBytes": 861553664
+            },
+            "after-stop": {
+              "seconds": 3.044680201999654,
+              "samples": 13,
+              "meanRSSBytes": 848859136.0,
+              "peakRSSBytes": 848859136,
+              "peakPSSBytes": 846746624,
+              "lastRSSBytes": 848859136,
+              "lastPSSBytes": 846746624
+            },
+            "after-cleanup": {
+              "seconds": 0.09819804500057217,
+              "samples": 3,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "e0f5389de3b068227cecb7bd2831597853d17492db57d6127258bce9d1f8b298",
+            "resources.jsonl": "47b7275467e63c0c13aac2c022576219f123534efeadb39741a16a1a594f516d",
+            "events.jsonl": "33fd0d53cc0ccf0c9fde34584e6757639ccc161e46bb09fdecbe0190bb39652f"
+          },
+          "atPeakRSS": {
+            "rssBytes": 3026481152,
+            "phase": "eviction",
+            "byKind": {
+              "jman": 17682432,
+              "gradle": 859594752,
+              "jdtls": 2149203968
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 16723968.0,
+              "jdtls": 2114633728.0,
+              "gradle": 760360960.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 848859136.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 1,
+          "host": {
+            "minAvailableBytes": 28476280832,
+            "peakSwapUsedBytes": 0,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          },
+          "eviction": {
+            "sessionsAfter": 1
+          },
+          "reopen": {
+            "sessionsAfter": 1
+          },
+          "idle": {
+            "remainingSessions": 0,
+            "evictionExpected": true,
+            "seconds": 32.0
+          }
+        }
+      ],
+      "heapObservation": {
+        "source": "live /proc/PID/cmdline, heap flags only",
+        "arguments": [
+          [
+            "-Xms128m",
+            "-Xmx1536m"
+          ]
+        ]
+      }
+    },
+    "limited-1-4g": {
+      "projectCommit": "079896035e13d2e27c13bc63e39877e5924c3854",
+      "jmanExecutableSHA256": "9035531c5d3e7f2127531f3dcb30d04fc85fd83a5128ecc1ee27343b5a662636",
+      "parameters": {
+        "sessions": "1",
+        "repetitions": 1,
+        "startup": "concurrent",
+        "timeout": 600.0,
+        "query_rounds": 3,
+        "refresh_rounds": 0,
+        "steady_seconds": 3,
+        "idle_seconds": 0,
+        "idle_timeout": 900,
+        "lifecycle": false,
+        "sample_period": 0.2,
+        "jdtls_max_heap_mib": null
+      },
+      "trials": [
+        {
+          "trial": "001-1-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 1,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 3253862400,
+          "peakPSSBytes": 3183041536,
+          "availableSamples": 551,
+          "pssSamples": 550,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 88.74942842400014,
+              "latency": {
+                "count": 1,
+                "p50Seconds": 88.74675716499996,
+                "p95Seconds": 88.74675716499996,
+                "maxSeconds": 88.74675716499996
+              },
+              "commands": 1,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 75.07971263900026,
+              "latency": {
+                "count": 3,
+                "p50Seconds": 1.5001441800000066,
+                "p95Seconds": 72.28538393000008,
+                "maxSeconds": 72.28538393000008
+              },
+              "commands": 3,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 10.050282418000279,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 1.0452396669998052,
+                "p95Seconds": 1.7969906120001724,
+                "maxSeconds": 1.7969906120001724
+              },
+              "commands": 9,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 88.88590037999984,
+              "samples": 258,
+              "meanRSSBytes": 1982843705.5503876,
+              "peakRSSBytes": 2978062336,
+              "peakPSSBytes": 2920920064,
+              "lastRSSBytes": 2637021184,
+              "lastPSSBytes": 2503946240
+            },
+            "first-queries": {
+              "seconds": 75.2062273470001,
+              "samples": 220,
+              "meanRSSBytes": 2439546172.509091,
+              "peakRSSBytes": 3253862400,
+              "peakPSSBytes": 3183041536,
+              "lastRSSBytes": 2872901632,
+              "lastPSSBytes": 2808266752
+            },
+            "steady": {
+              "seconds": 3.0906383320002533,
+              "samples": 11,
+              "meanRSSBytes": 2863106234.181818,
+              "peakRSSBytes": 2872901632,
+              "peakPSSBytes": 2808266752,
+              "lastRSSBytes": 2851594240,
+              "lastPSSBytes": 2785977344
+            },
+            "warm-queries": {
+              "seconds": 10.160092983999675,
+              "samples": 33,
+              "meanRSSBytes": 2880488541.090909,
+              "peakRSSBytes": 2892443648,
+              "peakPSSBytes": 2825241600,
+              "lastRSSBytes": 2889519104,
+              "lastPSSBytes": 2825241600
+            },
+            "after-stop": {
+              "seconds": 3.0763327720001143,
+              "samples": 13,
+              "meanRSSBytes": 767311872.0,
+              "peakRSSBytes": 767311872,
+              "peakPSSBytes": 740657152,
+              "lastRSSBytes": 767311872,
+              "lastPSSBytes": 740605952
+            },
+            "after-cleanup": {
+              "seconds": 0.06674221899993427,
+              "samples": 2,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "080c3534dc1f0ba2c611bf6e51819d8ec5a95262d0f16f8da375632c7dfa09c3",
+            "resources.jsonl": "adf041a7addbfa1dc324f7b52db8c2c7dccdeb90a6206aaacb406486ea3d1491",
+            "events.jsonl": "3eaad8208f3df7de4670ec7a054dd10d55caa09bd2b1d35867fea2767e05886a"
+          },
+          "atPeakRSS": {
+            "rssBytes": 3253862400,
+            "phase": "first-queries",
+            "byKind": {
+              "jman": 16248832,
+              "gradle": 767614976,
+              "jdtls": 2469998592
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 18100224.0,
+              "jdtls": 2077639028.3636363,
+              "gradle": 767366981.8181819,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 767311872.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 1,
+          "host": {
+            "minAvailableBytes": 26185187328,
+            "peakSwapUsedBytes": 0,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 1.0,
+              "full": 1.0
+            }
+          }
+        }
+      ],
+      "cgroup": {
+        "memory.max": "4294967296",
+        "memory.peak": "3450449920",
+        "memory.current": "394436608",
+        "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+        "memory.swap.max": "0",
+        "memory.swap.peak": "0",
+        "memory.swap.current": "0"
+      }
+    },
+    "limited-5-16g": {
+      "projectCommit": "079896035e13d2e27c13bc63e39877e5924c3854",
+      "jmanExecutableSHA256": "9035531c5d3e7f2127531f3dcb30d04fc85fd83a5128ecc1ee27343b5a662636",
+      "parameters": {
+        "sessions": "5",
+        "repetitions": 1,
+        "startup": "concurrent",
+        "timeout": 600.0,
+        "query_rounds": 3,
+        "refresh_rounds": 0,
+        "steady_seconds": 3,
+        "idle_seconds": 0,
+        "idle_timeout": 900,
+        "lifecycle": false,
+        "sample_period": 0.2,
+        "jdtls_max_heap_mib": null
+      },
+      "trials": [
+        {
+          "trial": "001-5-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 5,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 13497946112,
+          "peakPSSBytes": 12730813440,
+          "availableSamples": 790,
+          "pssSamples": 762,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 337.514919362,
+              "latency": {
+                "count": 5,
+                "p50Seconds": 315.0837946620004,
+                "p95Seconds": 337.5114565950007,
+                "maxSeconds": 337.5114565950007
+              },
+              "commands": 5,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 303.6744706489999,
+              "latency": {
+                "count": 15,
+                "p50Seconds": 3.143311570000151,
+                "p95Seconds": 301.3634595170006,
+                "maxSeconds": 301.3634595170006
+              },
+              "commands": 15,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 16.04129727399959,
+              "latency": {
+                "count": 45,
+                "p50Seconds": 1.0364757879997342,
+                "p95Seconds": 5.451813255000161,
+                "maxSeconds": 5.990815156999815
+              },
+              "commands": 45,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 337.7121641220001,
+              "samples": 411,
+              "meanRSSBytes": 7674321857.712895,
+              "peakRSSBytes": 12230144000,
+              "peakPSSBytes": 11388107776,
+              "lastRSSBytes": 10866286592,
+              "lastPSSBytes": 10106380288
+            },
+            "first-queries": {
+              "seconds": 304.036094264,
+              "samples": 312,
+              "meanRSSBytes": 8733963014.564102,
+              "peakRSSBytes": 13277274112,
+              "peakPSSBytes": 12515508224,
+              "lastRSSBytes": 13277274112,
+              "lastPSSBytes": 12515508224
+            },
+            "steady": {
+              "seconds": 3.2435220639999898,
+              "samples": 9,
+              "meanRSSBytes": 13275454577.777779,
+              "peakRSSBytes": 13277274112,
+              "peakPSSBytes": 12515508224,
+              "lastRSSBytes": 13260898304,
+              "lastPSSBytes": 12498788352
+            },
+            "warm-queries": {
+              "seconds": 16.303895068999736,
+              "samples": 24,
+              "meanRSSBytes": 13440965120.0,
+              "peakRSSBytes": 13497946112,
+              "peakPSSBytes": 12730813440,
+              "lastRSSBytes": 13271367680,
+              "lastPSSBytes": 12509974528
+            },
+            "after-stop": {
+              "seconds": 3.0421987139998237,
+              "samples": 13,
+              "meanRSSBytes": 909275136.0,
+              "peakRSSBytes": 909275136,
+              "peakPSSBytes": 907541504,
+              "lastRSSBytes": 909275136,
+              "lastPSSBytes": 907541504
+            },
+            "after-cleanup": {
+              "seconds": 0.09665133399994374,
+              "samples": 3,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "d63a2a836c306e23c6133a65c0f47fb41bea047a0f1d76cd83eb77324abfdabe",
+            "resources.jsonl": "7690f65c040ee9e34640a54a1b9b31b90f255b21f268615a8bb2ab0739f9770c",
+            "events.jsonl": "cc606f63dc283e8482d5da6763af8ecebde812454e3076641f07bd5517efd6a5"
+          },
+          "atPeakRSS": {
+            "rssBytes": 13497946112,
+            "phase": "warm-queries",
+            "byKind": {
+              "jman": 33239040,
+              "gradle": 909275136,
+              "jdtls": 12555431936
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 29892608.0,
+              "jdtls": 12336286833.777779,
+              "gradle": 909275136.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 909275136.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 5,
+          "host": {
+            "minAvailableBytes": 18519867392,
+            "peakSwapUsedBytes": 0,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          }
+        }
+      ],
+      "cgroup": {
+        "memory.max": "17179869184",
+        "memory.peak": "14006968320",
+        "memory.current": "1373917184",
+        "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+        "memory.swap.max": "0",
+        "memory.swap.peak": "0",
+        "memory.swap.current": "0"
+      }
+    },
+    "heap-1024": {
+      "projectCommit": "079896035e13d2e27c13bc63e39877e5924c3854",
+      "jmanExecutableSHA256": "9035531c5d3e7f2127531f3dcb30d04fc85fd83a5128ecc1ee27343b5a662636",
+      "parameters": {
+        "sessions": "1",
+        "repetitions": 1,
+        "startup": "concurrent",
+        "timeout": 600.0,
+        "query_rounds": 3,
+        "refresh_rounds": 0,
+        "steady_seconds": 3,
+        "idle_seconds": 0,
+        "idle_timeout": 900,
+        "lifecycle": false,
+        "sample_period": 0.2,
+        "jdtls_max_heap_mib": 1024
+      },
+      "trials": [
+        {
+          "trial": "001-1-sessions",
+          "success": true,
+          "errors": [],
+          "sessions": 1,
+          "daemonExitCode": 0,
+          "residualProcessCount": 0,
+          "sessionChecksPassed": true,
+          "peakRSSBytes": 2816638976,
+          "peakPSSBytes": 2769221632,
+          "availableSamples": 457,
+          "pssSamples": 456,
+          "timings": {
+            "cold-prepare": {
+              "wallSeconds": 59.20166936700025,
+              "latency": {
+                "count": 1,
+                "p50Seconds": 59.19978573499975,
+                "p95Seconds": 59.19978573499975,
+                "maxSeconds": 59.19978573499975
+              },
+              "commands": 1,
+              "failures": 0
+            },
+            "first-queries": {
+              "wallSeconds": 55.557323526999426,
+              "latency": {
+                "count": 3,
+                "p50Seconds": 1.2271381410000686,
+                "p95Seconds": 53.21815910700025,
+                "maxSeconds": 53.21815910700025
+              },
+              "commands": 3,
+              "failures": 0
+            },
+            "warm-queries": {
+              "wallSeconds": 8.983236551999653,
+              "latency": {
+                "count": 9,
+                "p50Seconds": 1.003019499000402,
+                "p95Seconds": 1.3127541170006225,
+                "maxSeconds": 1.3127541170006225
+              },
+              "commands": 9,
+              "failures": 0
+            }
+          },
+          "resourcePhases": {
+            "cold-prepare": {
+              "seconds": 59.28108654100015,
+              "samples": 199,
+              "meanRSSBytes": 1846059954.8140705,
+              "peakRSSBytes": 2654916608,
+              "peakPSSBytes": 2612420608,
+              "lastRSSBytes": 2654916608,
+              "lastPSSBytes": 2612420608
+            },
+            "first-queries": {
+              "seconds": 55.67257797599996,
+              "samples": 184,
+              "meanRSSBytes": 2250640673.3913045,
+              "peakRSSBytes": 2774454272,
+              "peakPSSBytes": 2726649856,
+              "lastRSSBytes": 2772332544,
+              "lastPSSBytes": 2724493312
+            },
+            "steady": {
+              "seconds": 3.0823206980003306,
+              "samples": 12,
+              "meanRSSBytes": 2772332544.0,
+              "peakRSSBytes": 2772332544,
+              "peakPSSBytes": 2727589888,
+              "lastRSSBytes": 2772332544,
+              "lastPSSBytes": 2724410368
+            },
+            "warm-queries": {
+              "seconds": 9.06878754599984,
+              "samples": 33,
+              "meanRSSBytes": 2787405451.6363635,
+              "peakRSSBytes": 2816638976,
+              "peakPSSBytes": 2769221632,
+              "lastRSSBytes": 2378878976,
+              "lastPSSBytes": 2331350016
+            },
+            "after-stop": {
+              "seconds": 3.045715678000306,
+              "samples": 13,
+              "meanRSSBytes": 750075904.0,
+              "peakRSSBytes": 750075904,
+              "peakPSSBytes": 748229632,
+              "lastRSSBytes": 750075904,
+              "lastPSSBytes": 748131328
+            },
+            "after-cleanup": {
+              "seconds": 0.09683652300009271,
+              "samples": 3,
+              "meanRSSBytes": 0.0,
+              "peakRSSBytes": 0,
+              "peakPSSBytes": 0,
+              "lastRSSBytes": 0,
+              "lastPSSBytes": 0
+            }
+          },
+          "rawSHA256": {
+            "result.json": "faba2afd820efebd2e81793916efc1fea23a6c6107a7953c270225d69bf69dc0",
+            "resources.jsonl": "6a91e746a361dea7157b68a0c55cdc555a1b760c16b50a3aaa21f84df5598779",
+            "events.jsonl": "19ce7777b05f268dae65e5bee261ce4c840035dd9b2838bdb4ca02f650c8199c"
+          },
+          "atPeakRSS": {
+            "rssBytes": 2816638976,
+            "phase": "warm-queries",
+            "byKind": {
+              "jman": 18452480,
+              "gradle": 750075904,
+              "jdtls": 2048110592
+            }
+          },
+          "phaseMeanRSSByKind": {
+            "steady": {
+              "jman": 16220160.0,
+              "jdtls": 2006036480.0,
+              "gradle": 750075904.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-stop": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 750075904.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            },
+            "after-cleanup": {
+              "jman": 0.0,
+              "jdtls": 0.0,
+              "gradle": 0.0,
+              "gradle-client": 0.0,
+              "other": 0.0
+            }
+          },
+          "maxConcurrentGradleDaemons": 1,
+          "host": {
+            "minAvailableBytes": 28674617344,
+            "peakSwapUsedBytes": 0,
+            "swapInPagesDelta": 0,
+            "swapOutPagesDelta": 0,
+            "memoryPressureTotalDeltaMicroseconds": {
+              "some": 0.0,
+              "full": 0.0
+            }
+          }
+        }
+      ],
+      "heapObservation": {
+        "source": "live /proc/PID/cmdline, heap flags only",
+        "arguments": [
+          [
+            "-Xms128m",
+            "-Xmx1024m"
+          ]
+        ]
+      }
+    }
+  }
+}

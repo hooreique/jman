@@ -69,6 +69,14 @@ JSON responses use `schemaVersion`, `status`, `query`, `context`, `snapshot`, `r
 - State that references cover the imported workspace, not unknown downstream consumers.
 - State that implementation candidates do not determine Spring runtime bean/proxy selection.
 
+## Resource acceptance criteria
+
+- Support one, three, and five active worktrees while preserving navigation
+  correctness, busy-session protection, and worktree isolation.
+- Base memory guidance on reproducible measurements of the whole service,
+  including Gradle, and the latency cost of import and eviction. See the
+  [measurement method](benchmark.md#resource-measurement).
+
 ## Skill rules
 
 The distributed skill should tell an agent to resolve definitions and references before reasoning about implementation or impact; check origin, context, and coverage; read only the needed source; follow `nextAction` or `doctor` on incomplete results; and modify owner source or generator inputs rather than caches or generated output. It should not duplicate operations documentation or internal JDTLS detail.

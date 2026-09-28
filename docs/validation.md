@@ -1,6 +1,6 @@
 # Validation record
 
-Last updated: 2026-09-24. Runtime versions and fixture artifacts are fixed by `flake.lock` and Nix hashes.
+Last updated: 2026-09-28. Runtime versions and fixture artifacts are fixed by `flake.lock` and Nix hashes.
 
 ## Repeatable checks
 
@@ -22,6 +22,17 @@ It verifies:
 - benchmark isolation, custom suites, evaluator timeouts, missing usage, and provider usage accounting.
 
 The Spring fixture proves runtime behavior; it does not make static references a proxy-runtime analyzer.
+
+## Resource controls and profiling
+
+Implementation `3df104c` passed Go race tests, vet, real JDTLS/Gradle integration,
+and 20 collector/runner tests. [CI](https://github.com/hooreique/jman/actions/runs/36370361049)
+passed `nix flake check` on x86_64-linux, aarch64-linux, and aarch64-darwin,
+including native process sampling and configured-heap verification.
+
+The [RxJava memory study](../reports/2026-09-28-memory-worktrees-report.md)
+records 22 successful Linux x86_64 trials covering concurrent worktrees,
+constrained memory, session lifecycle, and heap configuration.
 
 ## Observed agent trials
 

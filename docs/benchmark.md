@@ -69,7 +69,7 @@ Record task success, incorrect dependency selection, disallowed edits, wall time
 
 Report all attempts and successful attempts separately. `cost per success` is total measured cost divided by successful runs; it is undefined with no successes. Do not convert CPU or memory into currency without a stated model.
 
-The runner reports arm success, median time, complete token totals, paired time deltas, and a simple bootstrap interval when applicable. It samples daemon-tree RSS and CPU, but may miss detached Gradle daemons and short-lived processes.
+The runner reports arm success, median time, complete token totals, paired time deltas, and a simple bootstrap interval when applicable. Memory measurements use the [resource collector](#resource-measurement).
 
 ## Cold and warm modes
 
@@ -96,3 +96,40 @@ Custom suites provide template, project, repositories, prompt, allowed edits, an
 ## Interpreting results
 
 Start with pilot runs, then fix the repetition count and primary metric before a broader experiment. Report improvements, regressions, failures, timeouts, cold-start cost, and missing measurements. A small task suite is evidence about that suite, not all Java work.
+
+## Resource measurement
+
+`jman-bench resources` profiles deterministic queries across real Git worktrees.
+Each trial uses one daemon, a fresh JDTLS cache, and an isolated Gradle home
+shared by its worktrees, with checks for session count, readiness, and query results.
+
+```sh
+jman-bench resources --repository /path/to/project --ref COMMIT \
+  --output ./local/memory-concurrent --sessions 1,3,5 --repetitions 3 \
+  --startup concurrent --queries /path/to/queries.json --refresh-rounds 0
+```
+
+`--startup sequential` serializes preparation; navigation remains concurrent
+across worktrees. First queries are measured separately from warm queries.
+`--gradle-home-seed` copies dependencies, distributions, and `gradle.properties`,
+excluding daemon state and locks. Record seed preparation when using this option.
+
+Query manifests contain `queries` entries with `name`, `args`, and optional
+`expect` (`status`, `minResults`, `resultPathSuffix`); the runner supplies project,
+timeout, and JSON flags. Optional `edits` use relative `path`, unique `find`, and
+`replace` strings for refresh trials. See the [RxJava manifest](../bench/workloads/rxjava.json)
+and `resources --help` for lifecycle options. Without a manifest, the runner
+measures warm `prepare`, providing no navigation coverage.
+
+Each trial writes `events.jsonl`, `resources.jsonl`, and `result.json`; the
+experiment writes `metadata.json` and `summary.json`. Publish workload, runtime,
+machine, cache, and sampling settings with results and the raw-data location.
+
+The collector includes jman, JDTLS, Gradle, and observed workers, counting shared
+or detached processes once per sample. Peaks use simultaneous totals; adding
+independent process maxima overstates the peak. Linux provides RSS/PSS and macOS
+RSS; unavailable metrics are `null`. RSS can double-count shared pages, and
+sampling can miss short-lived processes.
+
+See the [RxJava study](../reports/2026-09-28-memory-worktrees-report.md) for a
+reproducible experiment and its results.

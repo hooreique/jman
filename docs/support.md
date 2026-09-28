@@ -15,7 +15,48 @@ This document defines shipped behavior for 0.1. Product goals live in [requireme
 | Packaging | Nix flake, locked runtime, fixed integration-fixture artifacts |
 | Benchmarking | Paired arms, isolated repositories/sessions/caches, independent evaluator, raw usage when available |
 
-Content fingerprints favor correctness over speed. They can be expensive in large workspaces. The default two-session limit and JVM heap setting are not a process-wide RSS limit.
+Content fingerprints favor correctness over speed. They can be expensive in large workspaces.
+
+## Memory and session controls
+
+| Setting | Default | Scope |
+|---|---|---|
+| `jman daemon --max-sessions` | `5` | Maximum resident workspace sessions |
+| `jman daemon --idle-timeout` | `15m` | Idle retention; minimum `1s` |
+| `.jman.json` → `jdtlsMaxHeapMiB` | `1536` | Project JDTLS maximum heap in MiB; integer ≥ `128`, matching the fixed initial heap |
+
+At capacity, the daemon replaces the least recently used non-busy session;
+requests wait within their deadline if all sessions are busy. Idle eviction
+also protects busy sessions. Its sweep adds up to one minute, or one second
+when the configured timeout is shorter than one minute.
+
+Home Manager exposes `services.jman.maxSessions` and `services.jman.idleTimeout`.
+Automatic startup uses the defaults; restart the daemon to change startup
+options. A project heap change takes effect on its next query or `refresh`.
+
+`status --json` reports `context.daemonPid`, `context.maxSessions`, and
+`context.idleTimeout`; session `detail` contains `pid` (zero without a running
+JVM) and the effective `jdtlsMaxHeapMiB`.
+
+Heap limits exclude JVM native memory and Gradle. Gradle daemons can outlive
+jman; `./gradlew --stop` with the matching `GRADLE_USER_HOME` also stops daemons
+shared with other projects.
+
+### RAM planning guidance
+
+Starting budgets for projects similar to the
+[measured RxJava workload](../reports/2026-09-28-memory-worktrees-report.md):
+
+| `--max-sessions` | Service memory allowance | Installed RAM guidance |
+|---:|---|---|
+| 1 | 4 GiB; verified with swap disabled | 8 GB starting point; 16 GB recommended |
+| 3 | 10 GiB estimate; no capped trial | 16 GB or more |
+| 5 | 16 GiB; verified with swap disabled | 32 GB or more |
+
+Installed RAM values are planning estimates allowing room for the OS and other
+applications, not tested machine minimums. Measure your workload before reducing
+its budget. Cold imports can exceed the default 120-second request deadline;
+use a longer `--timeout` when needed.
 
 ## Cache paths and cleanup
 

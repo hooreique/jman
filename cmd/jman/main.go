@@ -32,7 +32,7 @@ Commands:
   stop             Stop the daemon and its JDTLS processes
   doctor           Diagnose build/classpath/processor problems
   skill install    Install the bundled skill (--target DIRECTORY)
-  daemon           Run the user service (--max-sessions N)
+  daemon           Run the user service (--max-sessions N --idle-timeout 15m)
 
 Options:
   --project PATH   Explicit Gradle build root (otherwise discovered)
@@ -46,8 +46,10 @@ Options:
   --json          Versioned structured response
   --explain       Include full provenance and coverage in text output
 
+Daemon defaults: --max-sessions 5 --idle-timeout 15m (minimum 1s)
 Environment: JMAN_SOCKET, JMAN_CACHE_HOME, XDG_CACHE_HOME, XDG_RUNTIME_DIR
-Project settings: .jman.json
+Project settings: .jman.json; jdtlsMaxHeapMiB defaults to 1536 (minimum 128)
+The JDTLS heap setting is not a total resident-memory cap.
 `
 
 func main()            { os.Exit(run(os.Args[1:])) }
@@ -66,10 +68,11 @@ func run(args []string) int {
 	if command == "daemon" {
 		flags := flag.NewFlagSet(command, flag.ContinueOnError)
 		n := flags.Int("max-sessions", 5, "maximum active JDTLS sessions")
+		idleTimeout := flags.Duration("idle-timeout", 15*time.Minute, "stop idle workspace sessions after this duration (minimum 1s)")
 		if e := flags.Parse(args); e != nil {
 			return fail(e)
 		}
-		if e := jman.RunDaemon(*n); e != nil {
+		if e := jman.RunDaemon(*n, *idleTimeout); e != nil {
 			fmt.Fprintln(os.Stderr, e)
 			return 4
 		}

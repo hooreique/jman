@@ -18,11 +18,11 @@ import statistics
 import subprocess
 import sys
 import time
-import threading
 import urllib.request
 
 from fixture import SOURCE, evaluate, materialize, run
 from suite import manifest, create, copy_edits
+from resources import ResourceSampler, daemon_pid
 
 
 def dump(path, value):
@@ -42,65 +42,7 @@ class Events:
         self.file.close()
 
 
-def daemon_pid(socket):
-    import socket as sockets
-    try:
-        with sockets.socket(sockets.AF_UNIX) as client:
-            client.settimeout(.2)
-            client.connect(str(socket))
-            client.sendall(b"GET /health HTTP/1.0\r\nHost: jman\r\n\r\n")
-            chunks = []
-            while data := client.recv(4096):
-                chunks.append(data)
-        return json.loads(b"".join(chunks).split(b"\r\n\r\n", 1)[1])["pid"]
-    except (OSError, ValueError, KeyError):
-        return None
-
-
-class ServiceSampler:
-    """Sample the isolated daemon/JDTLS process tree; not the entire machine."""
-    def __init__(self, socket):
-        self.socket = socket
-        self.done = threading.Event()
-        self.peak = 0
-        self.cpu = {}
-        self.samples = 0
-        self.thread = threading.Thread(target=self.collect, daemon=True)
-        self.thread.start()
-
-    def collect(self):
-        while not self.done.wait(.2):
-            root = daemon_pid(self.socket)
-            if not root:
-                continue
-            processes = {}
-            for entry in Path("/proc").glob("[0-9]*/stat"):
-                try:
-                    fields = entry.read_text().rsplit(")", 1)[1].split()
-                    processes[int(entry.parent.name)] = (int(fields[1]), int(fields[21]), int(fields[11]) + int(fields[12]), fields[19])
-                except (OSError, ValueError, IndexError):
-                    continue
-            descendants = {root}
-            while True:
-                found = {pid for pid, value in processes.items() if value[0] in descendants}
-                if found <= descendants:
-                    break
-                descendants |= found
-            rss = 0
-            for pid in descendants:
-                if pid in processes:
-                    parent, pages, ticks, started = processes[pid]
-                    rss += pages * os.sysconf("SC_PAGE_SIZE")
-                    self.cpu[(pid, started)] = max(self.cpu.get((pid, started), 0), ticks)
-            self.peak = max(self.peak, rss)
-            self.samples += 1
-
-    def stop(self):
-        self.done.set()
-        self.thread.join(timeout=2)
-        return {"scope": "sampled daemon and observed descendants", "periodSeconds": .2,
-                "samples": self.samples, "peakRSSBytes": self.peak if self.samples else None,
-                "observedCPUSeconds": sum(self.cpu.values()) / os.sysconf("SC_CLK_TCK") if self.samples else None}
+ServiceSampler = ResourceSampler
 
 
 def command(argv, cwd, env, timeout):
@@ -241,15 +183,17 @@ def trial(args, root, repetition, arm):
     if arm == "jman":
         prompt += "\n\nAvailable additional tool: jman. Instructions:\n" + skill.read_text()
     events = Events(folder / "events.jsonl")
-    sampler = ServiceSampler(socket)
+    sampler = ServiceSampler(socket, gradle_home=cache / "gradle", output=folder / "resources.jsonl")
     prepare_seconds = 0
     try:
+        sampler.phase("dependency-prepare")
         if args.cache == "dependency-warm" or args.cache == "jdtls-warm":
             prepare_command = spec.get("prepare", ["gradle", "classes"]) if spec else ["gradle", "--offline", ":app:classes"]
             prepared = command(prepare_command, project, env, args.timeout)
             events.emit("dependency_prepare", result=prepared)
             if prepared["returncode"]:
                 raise RuntimeError("dependency preparation failed")
+        sampler.phase("jdtls-prepare")
         if args.cache == "jdtls-warm" and arm == "jman":
             prepared = command([args.jman, "prepare", "--timeout", f"{args.timeout}s", "--json"], project, env, args.timeout + 5)
             prepare_seconds = prepared["seconds"]
@@ -264,6 +208,7 @@ def trial(args, root, repetition, arm):
         repositories = spec.get("repositories", [spec["project"]]) if spec else ["commerce", "internal-text"]
         metadata["repositoryCommits"] = {relative: run(["git", "rev-parse", "HEAD"], Path(metadata["root"]) / relative).stdout.strip() for relative in repositories}
         events.emit("run_start", metadata=metadata)
+        sampler.phase("agent")
         start = time.monotonic()
         deadline = start + args.timeout
         if args.adapter_command:
@@ -274,6 +219,7 @@ def trial(args, root, repetition, arm):
         patch = run(["git", "diff", metadata["fixtureCommit"], "--binary"], project).stdout
         (folder / "patch.diff").write_text(patch)
         # Reconstruct the clean fixture for evaluation; only apply application edits.
+        sampler.phase("evaluation")
         clean = create(spec, folder / "evaluation-workspace")
         clean_project = Path(clean["project"])
         allowed = spec["allowedEdits"] if spec else ["app/src/main/java/example/AccessService.java"]
@@ -363,7 +309,7 @@ def report(root):
                               "Missing provider usage is unavailable, not estimated from characters.",
                               "Current shell adapter is for trusted agents on disposable environments; evaluator files are created only after the agent exits.",
                               "Baseline jman availability is disabled through PATH, not an adversarial filesystem sandbox.",
-                              "RSS is sampled for the daemon tree; detached Gradle daemons and short-lived processes may be missed. Pricing requires an explicit rate file."]}
+                              "RSS includes observed descendants and Gradle daemons in the isolated Gradle home; samples may miss short-lived processes. Pricing requires an explicit rate file."]}
     dump(root / "report.json", output)
     lines = ["# jman benchmark", "", f"Evidence: **{evidence}**", "", "| Arm | Success | Median seconds | Input tokens | Output tokens |", "|---|---:|---:|---:|---:|"]
     for arm, value in arms.items():
@@ -374,8 +320,12 @@ def report(root):
 
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "resources":
+        from resource_bench import main as resource_main
+        return resource_main(sys.argv[2:])
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("resources", help="profile memory across real Git worktrees (resources --help)")
     fixture = commands.add_parser("fixture")
     fixture.add_argument("destination", type=Path)
     validate = commands.add_parser("validate")
@@ -440,4 +390,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
