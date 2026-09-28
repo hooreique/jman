@@ -21,8 +21,11 @@ Content fingerprints favor correctness over speed. They can be expensive in larg
 
 The daemon keeps at most **five** workspace sessions by default. At capacity it
 replaces the least recently used session that is not serving a request; if all
-sessions are busy, requests wait within their deadline. Idle sessions expire
-after **15 minutes**. Separate worktrees retain separate JDTLS state.
+sessions are busy, requests wait within their deadline. Idle sessions become
+eligible for eviction after **15 minutes**; the periodic sweep can add up to
+one minute, and never evicts a session serving a request. For timeouts shorter
+than one minute the sweep runs every second. Separate worktrees retain separate
+JDTLS state.
 
 ```sh
 jman daemon --max-sessions 3 --idle-timeout 10m
@@ -50,8 +53,36 @@ These controls do not cap total resident memory. Five default heaps have a
 combined maximum of 7.5 GiB, before JVM native memory, Gradle daemons/workers, and
 jman itself; this is neither a reservation nor an observed usage estimate.
 Gradle manages its own daemons and may retain them after JDTLS or jman stops.
+Gradle's `./gradlew --stop` uses the matching `GRADLE_USER_HOME` and can stop
+daemons shared with other projects; run it when those daemons are no longer
+needed.
 See [resource measurement](benchmark.md#resource-measurement) for reproducible
 measurements and their limits.
+
+### RAM planning guidance
+
+For projects similar to the measured 1,884-Java-file RxJava workload, use these
+starting budgets. The study used Linux, dependency-seeded caches, and a Gradle
+worker limit of four. Allow extra space for the OS, editor, browsers, and builds
+outside jman's process family.
+
+| Active large worktrees | Session ceiling | Service memory allowance | Installed RAM guidance |
+|---:|---:|---|---|
+| 1 | `--max-sessions 1` | 4 GiB; verified with swap disabled | 8 GB planning starting point; 16 GB recommended |
+| 3 | `--max-sessions 3` | 10 GiB estimate; no capped three-session trial | 16 GB or more |
+| 5 | `--max-sessions 5` | 16 GiB; verified with swap disabled | 32 GB or more |
+
+These are workload-specific planning recommendations, not verified minimum
+physical RAM requirements. The 4 GiB and 16 GiB limits were applied to a service
+scope on a larger host; they do not establish that an entire computer of those
+sizes is sufficient. Different projects, Gradle workers, and annotation
+processors can change the budget. Measure your workload before tightening its
+heap or memory limit. No CPU minimum or latency guarantee was established.
+
+Cold imports of several large worktrees can exceed the default 120-second
+request deadline; the study used `--timeout 600s`. See the
+[memory report and reproducible results](../reports/2026-09-28-memory-worktrees-report.md)
+for observed peaks, navigation costs, and platform limits.
 
 ## Cache paths and cleanup
 

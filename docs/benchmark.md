@@ -156,3 +156,7 @@ shutdown. Peaks are the maximum of simultaneous sums, not the sum of each
 process's independent maximum. JVM heap limits exclude native memory and Gradle.
 Choose defaults only after considering memory and latency together; report a
 tested operating envelope instead of inventing an untested minimum RAM value.
+
+The [RxJava worktree memory study](../reports/2026-09-28-memory-worktrees-report.md)
+records the pinned workload, import compatibility adjustment, repeated trials,
+constrained budgets, and published per-trial summaries for issue #1.
