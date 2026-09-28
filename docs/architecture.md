@@ -66,12 +66,6 @@ The daemon uses bounded queues, request deadlines, cancellation, idle eviction, 
 
 `status` is a compact summary. `doctor --json` exposes JDK, Gradle, Lombok, processor, and classpath diagnostics.
 
-The daemon's session count and idle timeout bound how many JDTLS processes it
-retains, not their combined RSS. A project's `jdtlsMaxHeapMiB` is passed to both
-the launcher and direct-Java startup paths. Status exposes the effective limits
-and process IDs so resource measurements can identify live sessions. Gradle
-daemons have a separate lifecycle and must be accounted for independently.
-
 ## Packaging
 
 The flake exposes `jman`, `jman-bench`, the JDTLS extension, apps, a development shell, checks, overlays, and a Home Manager module. `overlays.default` rebuilds with the caller's nixpkgs; `overlays.pinned` exposes this flake's fixed packages.

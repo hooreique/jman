@@ -25,27 +25,14 @@ The Spring fixture proves runtime behavior; it does not make static references a
 
 ## Resource controls and profiling
 
-The implementation in `3df104c` passed Go race tests and vet, local real
-JDTLS/Gradle integration, and `nix flake check`. The final collector and runner
-tests passed 12 and 8 cases respectively, including missing metrics, detached
-and shared Gradle processes, PID reuse, daemon replacement, phase accounting,
-real Git worktree isolation, and cleanup failures. The real integration suite
-also verifies a configured heap and its effective PID/settings after restart.
+Implementation `3df104c` passed Go race tests, vet, real JDTLS/Gradle integration,
+and 20 collector/runner tests. [CI](https://github.com/hooreique/jman/actions/runs/36370361049)
+passed `nix flake check` on x86_64-linux, aarch64-linux, and aarch64-darwin,
+including native process sampling and configured-heap verification.
 
-[CI run 36362053903](https://github.com/hooreique/jman/actions/runs/36362053903)
-passed `nix flake check` on x86_64-linux, aarch64-linux, and aarch64-darwin.
-This includes platform-native process sampling during the runner tests; it is
-not a cross-platform performance or memory-capacity study.
-
-The [worktree memory report](../reports/2026-09-28-memory-worktrees-report.md)
-records the pinned large-project workload, measured operating envelope,
-first-navigation costs, and the limits of system-sizing guidance. Raw data is
-retained outside Git under the report's documented experiment directory.
-All 18 concurrent/sequential matrix trials passed, covering 648 navigation
-commands across 1/3/5 active worktrees. Four additional trials passed: one and
-five sessions under 4/16 GiB no-swap cgroup limits, refresh/eviction/idle
-lifecycle checks, and a one-session 1024 MiB heap configuration. All 22 trials
-ended with zero residual tracked processes after cleanup.
+The [RxJava memory study](../reports/2026-09-28-memory-worktrees-report.md)
+records 22 successful Linux x86_64 trials covering concurrent worktrees,
+constrained memory, session lifecycle, and heap configuration.
 
 ## Observed agent trials
 

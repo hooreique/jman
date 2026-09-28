@@ -69,7 +69,7 @@ Record task success, incorrect dependency selection, disallowed edits, wall time
 
 Report all attempts and successful attempts separately. `cost per success` is total measured cost divided by successful runs; it is undefined with no successes. Do not convert CPU or memory into currency without a stated model.
 
-The runner reports arm success, median time, complete token totals, paired time deltas, and a simple bootstrap interval when applicable. Its resource collector samples service processes and Gradle daemons associated with the isolated Gradle home. Short-lived processes can fall between samples; missing metrics remain unavailable.
+The runner reports arm success, median time, complete token totals, paired time deltas, and a simple bootstrap interval when applicable. Memory measurements use the [resource collector](#resource-measurement).
 
 ## Cold and warm modes
 
@@ -99,12 +99,9 @@ Start with pilot runs, then fix the repetition count and primary metric before a
 
 ## Resource measurement
 
-`jman-bench resources` runs deterministic workloads without an agent or API key.
-It clones an existing local Git repository, resolves a commit, and creates real
-worktrees in the output directory. Each trial has one daemon, a fresh JDTLS
-cache, and one isolated Gradle user home shared by its worktrees. It checks the
-actual session roots and readiness; opening five worktrees while retaining only
-two sessions is not a five-session measurement.
+`jman-bench resources` profiles deterministic queries across real Git worktrees.
+Each trial uses one daemon, a fresh JDTLS cache, and an isolated Gradle home
+shared by its worktrees, with checks for session count, readiness, and query results.
 
 ```sh
 jman-bench resources --repository /path/to/project --ref COMMIT \
@@ -112,51 +109,27 @@ jman-bench resources --repository /path/to/project --ref COMMIT \
   --startup concurrent --queries /path/to/queries.json --refresh-rounds 0
 ```
 
-Repeat with `--startup sequential` to separate simultaneous import pressure from
-steady residency. The runner measures the first navigation round separately
-before steady residency and repeated warm queries, retaining any additional
-indexing or restart cost. `--gradle-home-seed /path/to/prepared/gradle-home` copies cached
-dependencies/distributions and `gradle.properties`, excluding daemon state and
-lock files. Record how that seed was prepared. A seeded run is dependency-warm
-and JDTLS-cold; OS page caches remain uncontrolled. Each trial stops only its
-own jman daemon and Gradle home.
+`--startup sequential` serializes preparation; navigation remains concurrent
+across worktrees. First queries are measured separately from warm queries.
+`--gradle-home-seed` copies dependencies, distributions, and `gradle.properties`,
+excluding daemon state and locks. Record seed preparation when using this option.
 
-Query manifests contain `queries` with a name, an `args` array, and an optional
-`expect` object (`status`, `minResults`, `resultPathSuffix`). The runner supplies
-project, timeout, and JSON flags. Without a manifest, warm `prepare` is measured
-and the result explicitly lacks navigation coverage. The pinned
-[RxJava workload](../bench/workloads/rxjava.json) covers a mapper definition,
-references, and hover. Verify the project independently with its compiler and
-relevant tests before treating resource results as successful navigation.
+Query manifests contain `queries` entries with `name`, `args`, and optional
+`expect` (`status`, `minResults`, `resultPathSuffix`); the runner supplies project,
+timeout, and JSON flags. Optional `edits` use relative `path`, unique `find`, and
+`replace` strings for refresh trials. See the [RxJava manifest](../bench/workloads/rxjava.json)
+and `resources --help` for lifecycle options. Without a manifest, the runner
+measures warm `prepare`, providing no navigation coverage.
 
-Optional `edits` entries contain relative `path`, unique `find`, and `replace`
-strings. `--refresh-rounds` alternates these edits, refreshes, and repeats the
-queries. `--lifecycle` opens an extra worktree to force eviction and then reopens
-the evicted session. `--idle-seconds` observes idle expiry using the explicitly
-recorded `--idle-timeout` in seconds. Use separate lifecycle trials when an
-accelerated timeout would interfere with a large import.
+Each trial writes `events.jsonl`, `resources.jsonl`, and `result.json`; the
+experiment writes `metadata.json` and `summary.json`. Publish workload, runtime,
+machine, cache, and sampling settings with results and the raw-data location.
 
-Each trial saves command outcomes and phase boundaries in `events.jsonl`,
-process samples in `resources.jsonl`, and a summary in `result.json`; the root
-contains experiment metadata and `summary.json`. Preserve unsuccessful runs.
-Record project/source/dependency counts, CPU/RAM/OS, runtime versions, sampling
-period, settings, and the raw-data retention location in the published report.
+The collector includes jman, JDTLS, Gradle, and observed workers, counting shared
+or detached processes once per sample. Peaks use simultaneous totals; adding
+independent process maxima overstates the peak. Linux provides RSS/PSS and macOS
+RSS; unavailable metrics are `null`. RSS can double-count shared pages, and
+sampling can miss short-lived processes.
 
-The collector distinguishes jman, JDTLS, Gradle, and observed workers. It tracks
-PID plus process start identity, follows observed descendants after reparenting,
-and discovers detached Gradle daemons through the experiment's daemon logs.
-Shared processes count once in each simultaneous total, not once per worktree.
-Linux records RSS and PSS where permitted; macOS records RSS via `ps`. Unsupported
-or inaccessible metrics are `null`, with limitations recorded. Summed RSS can
-count shared pages more than once, so it is not a physical-memory measurement.
-
-Compare sampled peak and steady memory, import duration, query p50/p95, host
-available memory and swap, failures, and processes remaining after eviction and
-shutdown. Peaks are the maximum of simultaneous sums, not the sum of each
-process's independent maximum. JVM heap limits exclude native memory and Gradle.
-Choose defaults only after considering memory and latency together; report a
-tested operating envelope instead of inventing an untested minimum RAM value.
-
-The [RxJava worktree memory study](../reports/2026-09-28-memory-worktrees-report.md)
-records the pinned workload, import compatibility adjustment, repeated trials,
-constrained budgets, and published per-trial summaries for issue #1.
+See the [RxJava study](../reports/2026-09-28-memory-worktrees-report.md) for a
+reproducible experiment and its results.

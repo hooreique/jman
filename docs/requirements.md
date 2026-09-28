@@ -71,16 +71,11 @@ JSON responses use `schemaVersion`, `status`, `query`, `context`, `snapshot`, `r
 
 ## Resource acceptance criteria
 
-- Measure one, three, and five simultaneous worktrees with pinned projects and
-  runtime versions, including concurrent import and warm navigation.
-- Account for jman, JDTLS, and Gradle, including shared or detached Gradle daemons,
-  without counting a process twice. Keep unavailable metrics distinct from zero.
-- Record sampled peak and steady memory, import time, query latency, failures,
-  and memory remaining after eviction and shutdown. Preserve failed trials.
-- Base memory guidance on explicit workload and machine evidence. Java heap
-  limits and summed RSS must not be described as a physical-memory guarantee.
-- Retain navigation correctness, busy-session protection, and worktree isolation
-  when adjusting resource settings.
+- Support one, three, and five active worktrees while preserving navigation
+  correctness, busy-session protection, and worktree isolation.
+- Base memory guidance on reproducible measurements of the whole service,
+  including Gradle, and the latency cost of import and eviction. See the
+  [measurement method](benchmark.md#resource-measurement).
 
 ## Skill rules
 

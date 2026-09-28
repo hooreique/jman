@@ -114,7 +114,6 @@ jman discovers a Gradle build root from settings or build files. Use `--project 
   "offline": false,
   "javaHome": "/path/to/jdk21",
   "gradleJavaHome": "/path/to/jdk17-or-21",
-  "jdtlsMaxHeapMiB": 1536,
   "generateTasks": [":app:compileJava"]
 }
 ```
