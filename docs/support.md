@@ -15,7 +15,43 @@ This document defines shipped behavior for 0.1. Product goals live in [requireme
 | Packaging | Nix flake, locked runtime, fixed integration-fixture artifacts |
 | Benchmarking | Paired arms, isolated repositories/sessions/caches, independent evaluator, raw usage when available |
 
-Content fingerprints favor correctness over speed. They can be expensive in large workspaces. The default two-session limit and JVM heap setting are not a process-wide RSS limit.
+Content fingerprints favor correctness over speed. They can be expensive in large workspaces.
+
+## Memory and session controls
+
+The daemon keeps at most **five** workspace sessions by default. At capacity it
+replaces the least recently used session that is not serving a request; if all
+sessions are busy, requests wait within their deadline. Idle sessions expire
+after **15 minutes**. Separate worktrees retain separate JDTLS state.
+
+```sh
+jman daemon --max-sessions 3 --idle-timeout 10m
+jman status --json
+```
+
+Home Manager exposes `services.jman.maxSessions` and
+`services.jman.idleTimeout` with the same defaults. Automatic daemon startup uses
+the defaults; stop an existing daemon before changing its startup options.
+
+Set `jdtlsMaxHeapMiB` in the build root's `.jman.json` to change that project's
+JDTLS maximum Java heap. The default is **1536 MiB**; the value must be an integer
+of at least **128**, matching the fixed initial heap. A configuration change
+restarts that session on the next query or `refresh`.
+
+```json
+{"jdtlsMaxHeapMiB": 1024}
+```
+
+`status --json` reports `context.daemonPid`, `context.maxSessions`, and
+`context.idleTimeout`. Each session's `detail` includes its `pid` (zero without
+a running JVM) and effective `jdtlsMaxHeapMiB`.
+
+These controls do not cap total resident memory. Five default heaps have a
+combined maximum of 7.5 GiB, before JVM native memory, Gradle daemons/workers, and
+jman itself; this is neither a reservation nor an observed usage estimate.
+Gradle manages its own daemons and may retain them after JDTLS or jman stops.
+See [resource measurement](benchmark.md#resource-measurement) for reproducible
+measurements and their limits.
 
 ## Cache paths and cleanup
 

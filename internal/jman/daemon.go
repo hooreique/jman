@@ -17,10 +17,11 @@ import (
 )
 
 type manager struct {
-	mu       sync.Mutex
-	sessions map[string]*Session
-	max      int
-	queue    chan struct{}
+	mu          sync.Mutex
+	sessions    map[string]*Session
+	max         int
+	queue       chan struct{}
+	idleTimeout time.Duration
 }
 
 func (m *manager) acquire(ctx context.Context, root string) (*Session, error) {
@@ -102,6 +103,7 @@ func (m *manager) serve(w http.ResponseWriter, req *http.Request) {
 		}()
 	} else if q.Command == "status" {
 		response = reply(q)
+		response.Context = map[string]any{"daemonPid": os.Getpid(), "maxSessions": m.max, "idleTimeout": m.idleTimeout.String()}
 		m.mu.Lock()
 		for _, s := range m.sessions {
 			response.Results = append(response.Results, Result{Name: s.root, Detail: s.status()})
@@ -127,9 +129,12 @@ func (m *manager) serve(w http.ResponseWriter, req *http.Request) {
 	}
 	_ = json.NewEncoder(w).Encode(response)
 }
-func RunDaemon(maxSessions int) error {
+func RunDaemon(maxSessions int, idleTimeout time.Duration) error {
 	if maxSessions < 1 {
 		return fmt.Errorf("max-sessions must be positive")
+	}
+	if idleTimeout < time.Second {
+		return fmt.Errorf("idle-timeout must be at least 1s")
 	}
 	socket := SocketPath()
 	if e := os.MkdirAll(filepath.Dir(socket), 0700); e != nil {
@@ -154,28 +159,25 @@ func RunDaemon(maxSessions int) error {
 	if e = os.Chmod(socket, 0600); e != nil {
 		return e
 	}
-	m := &manager{sessions: map[string]*Session{}, max: maxSessions, queue: make(chan struct{}, 64)}
+	m := &manager{sessions: map[string]*Session{}, max: maxSessions, queue: make(chan struct{}, 64), idleTimeout: idleTimeout}
 	server := &http.Server{Handler: http.HandlerFunc(m.serve), ReadHeaderTimeout: 5 * time.Second}
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
 	go func() { <-ctx.Done(); _ = server.Close() }()
 	// Idle eviction bounds long-lived memory, even if no new workspaces arrive.
 	go func() {
-		ticker := time.NewTicker(time.Minute)
+		interval := time.Minute
+		if idleTimeout < time.Minute {
+			interval = time.Second
+		}
+		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				m.mu.Lock()
-				for root, s := range m.sessions {
-					if len(s.gate) == 0 && time.Since(s.lastAccess()) > 15*time.Minute {
-						s.stop()
-						delete(m.sessions, root)
-					}
-				}
-				m.mu.Unlock()
+				m.evictIdle(time.Now())
 			}
 		}
 	}()
@@ -192,6 +194,16 @@ func RunDaemon(maxSessions int) error {
 		return nil
 	}
 	return e
+}
+func (m *manager) evictIdle(now time.Time) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for root, s := range m.sessions {
+		if len(s.gate) == 0 && now.Sub(s.lastAccess()) >= m.idleTimeout {
+			s.stop()
+			delete(m.sessions, root)
+		}
+	}
 }
 func Client(ctx context.Context, q Request) (Response, error) {
 	socket := SocketPath()

@@ -109,6 +109,8 @@
             export HOME=$TMPDIR/home
             mkdir -p "$HOME"
             python3 ${self}/tests/bench_test.py ${packages.jman}/bin/jman
+            python3 ${self}/tests/resources_test.py
+            python3 ${self}/tests/resource_bench_test.py
             touch $out
           '';
           integration =

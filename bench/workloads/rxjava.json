@@ -1,0 +1,28 @@
+{
+  "repository": "https://github.com/ReactiveX/RxJava",
+  "commit": "2e066505a104f3326bb31a960047b0c183b3d027",
+  "queries": [
+    {
+      "name": "mapper-definition",
+      "args": ["definition", "src/main/java/io/reactivex/rxjava3/internal/operators/flowable/FlowableMap.java:64", "--symbol", "apply"],
+      "expect": {"status": "ok", "minResults": 1, "resultPathSuffix": "/io/reactivex/rxjava3/functions/Function.java"}
+    },
+    {
+      "name": "mapper-references",
+      "args": ["references", "src/main/java/io/reactivex/rxjava3/internal/operators/flowable/FlowableMap.java:27", "--symbol", "mapper"],
+      "expect": {"status": "ok", "minResults": 1, "resultPathSuffix": "/io/reactivex/rxjava3/internal/operators/flowable/FlowableMap.java"}
+    },
+    {
+      "name": "mapper-hover",
+      "args": ["hover", "src/main/java/io/reactivex/rxjava3/internal/operators/flowable/FlowableMap.java:64", "--symbol", "apply"],
+      "expect": {"status": "ok", "minResults": 1}
+    }
+  ],
+  "edits": [
+    {
+      "path": "src/main/java/io/reactivex/rxjava3/internal/operators/flowable/FlowableMap.java",
+      "find": "public final class FlowableMap<T, U> extends AbstractFlowableWithUpstream<T, U> {",
+      "replace": "public final class FlowableMap<T, U> extends AbstractFlowableWithUpstream<T, U> { // resource measurement"
+    }
+  ]
+}

@@ -69,6 +69,19 @@ JSON responses use `schemaVersion`, `status`, `query`, `context`, `snapshot`, `r
 - State that references cover the imported workspace, not unknown downstream consumers.
 - State that implementation candidates do not determine Spring runtime bean/proxy selection.
 
+## Resource acceptance criteria
+
+- Measure one, three, and five simultaneous worktrees with pinned projects and
+  runtime versions, including concurrent import and warm navigation.
+- Account for jman, JDTLS, and Gradle, including shared or detached Gradle daemons,
+  without counting a process twice. Keep unavailable metrics distinct from zero.
+- Record sampled peak and steady memory, import time, query latency, failures,
+  and memory remaining after eviction and shutdown. Preserve failed trials.
+- Base memory guidance on explicit workload and machine evidence. Java heap
+  limits and summed RSS must not be described as a physical-memory guarantee.
+- Retain navigation correctness, busy-session protection, and worktree isolation
+  when adjusting resource settings.
+
 ## Skill rules
 
 The distributed skill should tell an agent to resolve definitions and references before reasoning about implementation or impact; check origin, context, and coverage; read only the needed source; follow `nextAction` or `doctor` on incomplete results; and modify owner source or generator inputs rather than caches or generated output. It should not duplicate operations documentation or internal JDTLS detail.

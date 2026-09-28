@@ -18,12 +18,13 @@ import (
 )
 
 type Config struct {
-	JavaHome       string         `json:"javaHome"`
-	GradleJavaHome string         `json:"gradleJavaHome"`
-	GradleHome     string         `json:"gradleHome"`
-	Offline        bool           `json:"offline"`
-	GenerateTasks  []string       `json:"generateTasks"`
-	Settings       map[string]any `json:"settings"`
+	JDTLSMaxHeapMiB *int           `json:"jdtlsMaxHeapMiB,omitempty"`
+	JavaHome        string         `json:"javaHome"`
+	GradleJavaHome  string         `json:"gradleJavaHome"`
+	GradleHome      string         `json:"gradleHome"`
+	Offline         bool           `json:"offline"`
+	GenerateTasks   []string       `json:"generateTasks"`
+	Settings        map[string]any `json:"settings"`
 }
 type Session struct {
 	root         string
@@ -50,10 +51,12 @@ type Session struct {
 	lastUsed     time.Time
 	failures     int
 	nextStart    time.Time
+	pid          int
+	maxHeapMiB   int
 }
 
 func newSession(root string) *Session {
-	return &Session{root: root, gate: make(chan struct{}, 1), state: "stopped", documents: map[string]string{}, versions: map[string]int{}, files: map[string]string{}, lastUsed: time.Now()}
+	return &Session{root: root, gate: make(chan struct{}, 1), state: "stopped", documents: map[string]string{}, versions: map[string]int{}, files: map[string]string{}, lastUsed: time.Now(), maxHeapMiB: 1536}
 }
 func (s *Session) acquire(ctx context.Context) error {
 	select {
@@ -67,7 +70,7 @@ func (s *Session) release() { s.mu.Lock(); s.lastUsed = time.Now(); s.mu.Unlock(
 func (s *Session) status() map[string]any {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return map[string]any{"root": s.root, "state": s.state, "message": s.message, "lastUsed": s.lastUsed}
+	return map[string]any{"root": s.root, "state": s.state, "message": s.message, "lastUsed": s.lastUsed, "pid": s.pid, "jdtlsMaxHeapMiB": s.maxHeapMiB}
 }
 func (s *Session) lastAccess() time.Time { s.mu.Lock(); defer s.mu.Unlock(); return s.lastUsed }
 func (s *Session) setState(state, message string) {
@@ -139,6 +142,10 @@ func (s *Session) start(ctx context.Context) error {
 	} else if !os.IsNotExist(e) {
 		return e
 	}
+	maxHeapMiB, e := s.config.maxHeapMiB()
+	if e != nil {
+		return e
+	}
 	javaHome := s.config.JavaHome
 	if javaHome == "" {
 		javaHome = os.Getenv("JMAN_JAVA_HOME")
@@ -175,7 +182,8 @@ func (s *Session) start(ctx context.Context) error {
 	if e != nil {
 		return e
 	}
-	cmd := exec.Command(launcher, "-data", filepath.Join(dir, "data"), "-configuration", filepath.Join(dir, "config"), "--jvm-arg=-Xms128m", "--jvm-arg=-Xmx1536m")
+	heapArg := fmt.Sprintf("-Xmx%dm", maxHeapMiB)
+	cmd := exec.Command(launcher, "-data", filepath.Join(dir, "data"), "-configuration", filepath.Join(dir, "config"), "--jvm-arg=-Xms128m", "--jvm-arg="+heapArg)
 	if home := os.Getenv("JMAN_JDTLS_HOME"); home != "" {
 		jars, err := filepath.Glob(filepath.Join(home, "plugins", "org.eclipse.equinox.launcher_*.jar"))
 		if err != nil || len(jars) != 1 {
@@ -185,7 +193,7 @@ func (s *Session) start(ctx context.Context) error {
 		cmd = exec.Command(filepath.Join(javaHome, "bin", "java"),
 			"-Declipse.application=org.eclipse.jdt.ls.core.id1", "-Dosgi.bundles.defaultStartLevel=4", "-Declipse.product=org.eclipse.jdt.ls.core.product",
 			"-Dosgi.sharedConfiguration.area="+filepath.Join(home, jdtlsConfigDir), "-Dosgi.sharedConfiguration.area.readOnly=true", "-Dosgi.configuration.cascaded=true",
-			"-Xms128m", "-Xmx1536m", "--add-modules=ALL-SYSTEM", "--add-opens", "java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+			"-Xms128m", heapArg, "--add-modules=ALL-SYSTEM", "--add-opens", "java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/java.lang=ALL-UNNAMED",
 			"-jar", jars[0], "-data", filepath.Join(dir, "data"), "-configuration", filepath.Join(dir, "config"))
 	}
 	cmd.Dir = s.root
@@ -222,11 +230,20 @@ func (s *Session) start(ctx context.Context) error {
 	s.readyOnce = sync.Once{}
 	s.mu.Lock()
 	s.initialError = ""
+	s.pid = cmd.Process.Pid
+	s.maxHeapMiB = maxHeapMiB
 	s.mu.Unlock()
 	s.setState("starting", "")
 	s.rpc = lsp.New(stdout, stdin, s.handler)
 	done := s.processDone
-	go func() { _ = cmd.Wait(); _ = log.Close(); close(done) }()
+	go func() {
+		_ = cmd.Wait()
+		_ = log.Close()
+		s.mu.Lock()
+		s.pid = 0
+		s.mu.Unlock()
+		close(done)
+	}()
 	bundles := []string{}
 	if p := os.Getenv("JMAN_EXTENSION"); p != "" {
 		bundles = append(bundles, p)
@@ -267,6 +284,15 @@ func (s *Session) failedStart(message string) {
 	delay := time.Second * time.Duration(1<<min(s.failures-1, 5))
 	s.nextStart = time.Now().Add(delay)
 	s.setState("failed", message)
+}
+func (c Config) maxHeapMiB() (int, error) {
+	if c.JDTLSMaxHeapMiB == nil {
+		return 1536, nil
+	}
+	if *c.JDTLSMaxHeapMiB < 128 {
+		return 0, fmt.Errorf(".jman.json: jdtlsMaxHeapMiB must be an integer >= 128")
+	}
+	return *c.JDTLSMaxHeapMiB, nil
 }
 func merge(dst, src map[string]any) {
 	for k, v := range src {

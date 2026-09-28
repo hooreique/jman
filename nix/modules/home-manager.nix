@@ -11,6 +11,8 @@ let
     "daemon"
     "--max-sessions"
     (toString cfg.maxSessions)
+    "--idle-timeout"
+    cfg.idleTimeout
   ];
 in
 {
@@ -23,6 +25,11 @@ in
     maxSessions = lib.mkOption {
       type = lib.types.ints.positive;
       default = 5;
+    };
+    idleTimeout = lib.mkOption {
+      type = lib.types.str;
+      default = "15m";
+      description = "Idle workspace lifetime as a Go duration, at least 1s.";
     };
   };
 
