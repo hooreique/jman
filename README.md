@@ -90,6 +90,7 @@ jman implementations src/main/java/example/OrderMapper.java:12 --symbol toDto
 jman hover src/main/java/example/OrderService.java:42 --symbol normalize
 jman deps src/main/java/example/OrderService.java
 jman doctor
+jman status --json
 ```
 
 Definitions include the resolved signature, source set, selected artifact and version, binary SHA-256, source origin, and a short excerpt.
@@ -98,6 +99,7 @@ Definitions include the resolved signature, source set, selected artifact and ve
 # Full provenance or structured output.
 jman definition src/main/java/example/OrderService.java:42 --symbol normalize --explain
 jman definition src/main/java/example/OrderService.java:42 --symbol normalize --json
+jman definition src/main/java/example/OrderService.java:42 --symbol normalize --json --timings
 
 # Read a returned source path.
 jman read /path/from/definition/Source.java --lines 20:60
@@ -119,6 +121,15 @@ jman discovers a Gradle build root from settings or build files. Use `--project 
 ```
 
 `jman prepare --generate` runs only the configured `generateTasks` before importing. Run `jman refresh` after changing build or dependency inputs.
+
+`jman status --json` reports session cache state, last full sync/scan, watcher
+state, and best-effort JDT LS RSS/heap measurements. `--json --timings` exposes
+per-request stages. Navigation treats unrelated mapped workspace errors as
+advisory; use `--strict-workspace` to retain the conservative all-errors policy.
+
+Workspace import profiles are not currently exposed: jman imports the Gradle
+workspace selected by JDT LS. A reduced profile will be added only when it can
+preserve the same binding and navigation guarantees as a full import.
 
 See [memory and session controls](docs/support.md#memory-and-session-controls)
 for daemon limits, heap settings, and resource guidance.

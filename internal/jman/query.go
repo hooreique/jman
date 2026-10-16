@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf16"
 )
 
@@ -44,27 +45,114 @@ type provenance struct {
 }
 
 func (s *Session) Query(ctx context.Context, q Request) Response {
+	return s.query(ctx, q, 0)
+}
+
+func (s *Session) query(ctx context.Context, q Request, retries int) Response {
 	r := reply(q)
-	files, snapshot, build, e := s.scan()
-	if e != nil {
-		return failure(q, "error", "SCAN_FAILED", e, "")
+	timings := map[string]int64{}
+	mark := func(name string, started time.Time) { timings[name] = time.Since(started).Milliseconds() }
+	attachTimings := func() {
+		if q.Timings {
+			r.Timings = timings
+		}
 	}
+	started := time.Now()
+	// Consuming watcher events is transactional: no unsuccessful scan/import/sync
+	// may leave the next request trusting the previous cached snapshot.
+	cacheCommitted := false
+	defer func() {
+		if !cacheCommitted {
+			s.mu.Lock()
+			s.syncValid = false
+			s.lastCacheHit = false
+			s.mu.Unlock()
+			if s.watcher != nil {
+				s.watcher.markAll()
+			}
+		}
+	}()
+	fullScan := s.watcher == nil || s.lastSnapshot == "" || q.Command == "refresh" || time.Since(s.lastScan) >= 5*time.Minute
+	watchAll := false
+	var dirtyPaths []string
+	if s.watcher != nil {
+		watchAll, dirtyPaths = s.watcher.take()
+		if watchAll || len(dirtyPaths) > 0 {
+			// Editors and generators commonly emit several filesystem events for
+			// one save. Wait only after observing activity, then merge the burst.
+			select {
+			case <-ctx.Done():
+				return failure(q, "not-ready", "SYNC_TIMEOUT", ctx.Err(), "retry the query")
+			case <-time.After(75 * time.Millisecond):
+			}
+			nextAll, nextPaths := s.watcher.take()
+			watchAll = watchAll || nextAll
+			dirtyPaths = append(dirtyPaths, nextPaths...)
+		}
+		if watchAll {
+			fullScan = true
+		}
+		if fingerprint, err := workspaceFingerprint(s.root); err != nil || fingerprint != s.watchHash {
+			fullScan = true
+		}
+	}
+	var files map[string]string
+	var snapshot, build string
+	var e error
+	if fullScan {
+		s.startWatcher()
+		files, snapshot, build, e = s.scan()
+		mark("scan", started)
+		if e != nil {
+			if s.watcher != nil {
+				s.watcher.restore(watchAll, dirtyPaths)
+			}
+			return failure(q, "error", "SCAN_FAILED", e, "")
+		}
+	} else if len(dirtyPaths) > 0 {
+		dirtyStarted := time.Now()
+		files, snapshot, build, e = s.scanDirty(dirtyPaths)
+		mark("dirtyRead", dirtyStarted)
+		if e != nil {
+			s.watcher.restore(watchAll, dirtyPaths)
+			return failure(q, "error", "SCAN_FAILED", e, "")
+		}
+	} else {
+		files, snapshot, build = s.files, s.lastSnapshot, s.buildHash
+		timings["scan"] = 0
+	}
+	changeStarted := time.Now()
+	changed := filesChanged(s.files, files)
+	mark("changeDetect", changeStarted)
 	if q.Command == "refresh" || s.buildHash != "" && s.buildHash != build {
 		s.stop()
 		s.buildHash = ""
 	}
+	modelReloaded := false
 	if s.buildHash == "" {
 		s.model, s.modelError = loadModel(ctx, s.root)
+		if ctx.Err() != nil {
+			return failure(q, "not-ready", "MODEL_TIMEOUT", ctx.Err(), "retry the query")
+		}
 		s.buildHash = build
+		modelReloaded = true
 	}
-	modelHash, e := modelSnapshot(s.model)
-	if e != nil {
-		return failure(q, "partial", "ARTIFACT_CHANGED", e, "jman refresh")
+	modelHash := s.artifactHash
+	artifactStamp, stampErr := artifactFingerprint(s.model)
+	if stampErr != nil {
+		return failure(q, "partial", "ARTIFACT_CHANGED", stampErr, "jman refresh")
 	}
-	if s.artifactHash != "" && s.artifactHash != modelHash {
-		s.stop()
+	if modelReloaded || fullScan || artifactStamp != s.artifactStamp {
+		modelHash, e = modelSnapshot(s.model)
+		if e != nil {
+			return failure(q, "partial", "ARTIFACT_CHANGED", e, "jman refresh")
+		}
+		if s.artifactHash != "" && s.artifactHash != modelHash {
+			s.stop()
+		}
+		s.artifactHash = modelHash
+		s.artifactStamp = artifactStamp
 	}
-	s.artifactHash = modelHash
 	if e = s.start(ctx); e != nil {
 		return failure(q, "not-ready", "START_FAILED", e, "jman doctor --project "+s.root)
 	}
@@ -81,15 +169,78 @@ func (s *Session) Query(ctx context.Context, q Request) Response {
 	if initError != "" {
 		return failure(q, "not-ready", "IMPORT_FAILED", fmt.Errorf("%s", initError), "jman refresh")
 	}
-	problems, e := s.sync(ctx, files)
-	if e != nil {
-		return failure(q, "not-ready", "SYNC_FAILED", e, "jman doctor")
+	needsSync := q.Command == "refresh" || !s.syncValid || changed
+	s.mu.Lock()
+	s.lastCacheHit = !needsSync
+	s.mu.Unlock()
+	problems := s.lastProblems
+	if needsSync {
+		s.mu.Lock()
+		s.syncValid = false
+		s.mu.Unlock()
+		syncStarted := time.Now()
+		problems, e = s.sync(ctx, files)
+		mark("sync", syncStarted)
+		if e != nil {
+			return failure(q, "not-ready", "SYNC_FAILED", e, "jman doctor")
+		}
+		// Watch discovered roots before scanning them, so changes during the scan
+		// remain pending instead of disappearing in the watcher replacement gap.
+		s.startWatcher()
+		// Import can discover additional composite-build roots and generated sources.
+		postSyncScanStarted := time.Now()
+		postFiles, postSnapshot, postBuild, scanErr := s.scan()
+		mark("postSyncScan", postSyncScanStarted)
+		if scanErr != nil {
+			return failure(q, "error", "SCAN_FAILED", scanErr, "")
+		}
+		postStamp, stampErr := artifactFingerprint(s.model)
+		if postBuild != build || stampErr != nil || postStamp != artifactStamp {
+			// Never commit a new build hash against the old model/session.
+			s.stop()
+			s.buildHash = ""
+			if retries >= 2 {
+				return failure(q, "not-ready", "WORKSPACE_CHANGED", fmt.Errorf("build inputs changed repeatedly during sync"), "retry after the build settles")
+			}
+			cacheCommitted = true // The retry owns invalidation from this point.
+			return s.query(ctx, q, retries+1)
+		}
+		if filesChanged(s.files, postFiles) {
+			problems, e = s.sync(ctx, postFiles)
+			if e != nil {
+				return failure(q, "not-ready", "SYNC_FAILED", e, "jman doctor")
+			}
+			// Recheck after the additional sync as well.
+			_, latestSnapshot, latestBuild, err := s.scan()
+			latestStamp, stampErr := artifactFingerprint(s.model)
+			if err != nil || stampErr != nil || latestBuild != build || latestStamp != artifactStamp || latestSnapshot != postSnapshot {
+				s.stop()
+				s.buildHash = ""
+				if retries >= 2 {
+					return failure(q, "not-ready", "WORKSPACE_CHANGED", fmt.Errorf("workspace changed repeatedly during sync"), "retry after the build settles")
+				}
+				cacheCommitted = true
+				return s.query(ctx, q, retries+1)
+			}
+		}
+		s.files = postFiles
+		s.lastSnapshot = postSnapshot
+		s.buildHash = postBuild
+		snapshot = postSnapshot
+		s.mu.Lock()
+		s.lastScan = time.Now()
+		s.lastSync = time.Now()
+		s.syncValid = true
+		s.mu.Unlock()
+	} else {
+		timings["sync"] = 0
+		if fullScan {
+			s.mu.Lock()
+			s.lastScan = time.Now()
+			s.mu.Unlock()
+		}
 	}
-	// Import can discover additional composite-build roots and generated sources.
-	_, snapshot, _, e = s.scan()
-	if e != nil {
-		return failure(q, "error", "SCAN_FAILED", e, "")
-	}
+	cacheCommitted = true
 	r.Snapshot = digest([]byte(snapshot + modelHash))
 	r.Context = map[string]any{"root": s.root, "semantics": "compile-time"}
 	r.Coverage = map[string]any{"scope": "imported-workspace", "root": s.root, "complete": len(problems) == 0 && s.modelError == nil, "projectErrors": problems, "dynamicReferences": false}
@@ -97,21 +248,34 @@ func (s *Session) Query(ctx context.Context, q Request) Response {
 		r.Warnings = append(r.Warnings, s.modelError.Error())
 		r.Status = "partial"
 	}
-	if len(problems) > 0 {
-		r.Warnings = append(r.Warnings, "Project errors may make bindings or references incomplete; inspect doctor output.")
-		r.Status = "partial"
-	}
 	if q.Command == "prepare" || q.Command == "refresh" || q.Command == "doctor" {
-		r.Results = append(r.Results, Result{Name: "workspace", Detail: map[string]any{"service": s.status(), "settings": s.settings, "model": s.model, "problems": problems}})
+		if len(problems) > 0 {
+			r.Status = "partial"
+			r.Warnings = append(r.Warnings, "Workspace errors are listed below; inspect doctor output.")
+		}
+		problemDetail := problems
+		if q.Command == "doctor" {
+			problemDetail = describeProblems(s.model, problems)
+		}
+		r.Results = append(r.Results, Result{Name: "workspace", Detail: map[string]any{"service": s.status(ctx), "settings": s.settings, "model": s.model, "problems": problemDetail}})
+		attachTimings()
 		return r
 	}
 	if q.Command == "deps" {
 		c := s.model.context(q.File)
+		diagnostics := classifyProblems(s.model, c, problems, q.StrictWorkspace)
+		r.Coverage = map[string]any{"scope": "imported-workspace", "root": s.root, "complete": diagnostics.complete() && s.modelError == nil, "projectErrors": problems, "diagnostics": diagnostics, "dynamicReferences": false}
+		if len(diagnostics.Critical) > 0 {
+			r.Status = "partial"
+		} else if len(diagnostics.Advisory)+len(diagnostics.Unknown) > 0 {
+			r.Warnings = append(r.Warnings, diagnostics.warning())
+		}
 		if c == nil {
 			r.Status = "not-found"
 		} else {
 			r.Results = append(r.Results, Result{Name: c.Project + " / " + c.SourceSet, Detail: c})
 		}
+		attachTimings()
 		return r
 	}
 	data, e := os.ReadFile(q.File)
@@ -122,19 +286,31 @@ func (s *Session) Query(ctx context.Context, q Request) Response {
 	if e != nil {
 		return failure(q, "ambiguous", "INVALID_LOCATION", e, "")
 	}
+	documentStarted := time.Now()
 	if e = s.open(q.File, string(data)); e != nil {
 		return failure(q, "error", "DOCUMENT_FAILED", e, "")
 	}
+	mark("document", documentStarted)
 	// The command runs behind JDTLS's document lifecycle queue; selection is from the current working copy.
 	var p provenance
+	resolveStarted := time.Now()
 	if e = s.execute(ctx, "jman.resolve", []any{FileURI(q.File), q.Line - 1, column}, &p); e != nil {
 		return failure(q, "error", "BINDING_FAILED", e, "jman doctor")
 	}
+	mark("bindingResolve", resolveStarted)
 	bc := s.model.context(q.File)
 	r.Context = map[string]any{"root": s.root, "project": p.Project, "sourceRoot": p.SourceRoot, "build": bc, "semantics": "compile-time", "bindingResolved": p.Resolved}
 	// Keep default JSON context small as well: dependencies are available through `deps`.
 	if bc != nil {
 		r.Context = map[string]any{"root": s.root, "project": bc.Project, "sourceSet": bc.SourceSet, "configuration": bc.Configuration, "bindingResolved": p.Resolved, "semantics": "compile-time"}
+	}
+	diagnostics := classifyProblems(s.model, bc, problems, q.StrictWorkspace)
+	r.Coverage = map[string]any{"scope": "imported-workspace", "root": s.root, "complete": diagnostics.complete() && s.modelError == nil, "projectErrors": problems, "diagnostics": diagnostics, "dynamicReferences": false}
+	if len(diagnostics.Critical) > 0 {
+		r.Status = "partial"
+		r.Warnings = append(r.Warnings, "Errors in the caller's source set or compile dependencies may make bindings or references incomplete; inspect doctor output.")
+	} else if len(diagnostics.Advisory)+len(diagnostics.Unknown) > 0 {
+		r.Warnings = append(r.Warnings, diagnostics.warning())
 	}
 	params := map[string]any{"textDocument": map[string]any{"uri": FileURI(q.File)}, "position": point{q.Line - 1, column}}
 	if !p.Resolved {
@@ -147,15 +323,19 @@ func (s *Session) Query(ctx context.Context, q Request) Response {
 			Contents json.RawMessage `json:"contents"`
 			Range    *span           `json:"range"`
 		}
+		lspStarted := time.Now()
 		if e = s.rpc.Call(ctx, "textDocument/hover", params, &hover); e != nil {
 			return failure(q, "error", "LSP_FAILED", e, "")
 		}
+		mark("lsp", lspStarted)
 		text := hoverText(hover.Contents)
 		if len(text) > q.MaxBytes {
 			r.Warnings = append(r.Warnings, "Hover documentation truncated by --max-bytes.")
 		}
 		r.Results = append(r.Results, Result{Name: p.Name, Snippet: clip(text, q.MaxBytes) + "\n", Detail: map[string]any{"range": hover.Range}})
-		return s.finish(q, r, snapshot, modelHash)
+		r = s.finish(q, r, snapshot, modelHash)
+		attachTimings()
+		return r
 	}
 	method := map[string]string{"definition": "textDocument/definition", "references": "textDocument/references", "implementations": "textDocument/implementation"}[q.Command]
 	if method == "" {
@@ -165,9 +345,11 @@ func (s *Session) Query(ctx context.Context, q Request) Response {
 		params["context"] = map[string]any{"includeDeclaration": false}
 	}
 	var raw json.RawMessage
+	lspStarted := time.Now()
 	if e = s.rpc.Call(ctx, method, params, &raw); e != nil {
 		return failure(q, "error", "LSP_FAILED", e, "")
 	}
+	mark("lsp", lspStarted)
 	var locations []location
 	if len(raw) > 0 && raw[0] == '{' {
 		var loc location
@@ -308,7 +490,11 @@ func (s *Session) Query(ctx context.Context, q Request) Response {
 	if q.Command == "implementations" {
 		r.Warnings = append(r.Warnings, "Static implementation candidates do not determine Spring bean or proxy selection.")
 	}
-	return s.finish(q, r, snapshot, modelHash)
+	renderStarted := time.Now()
+	r = s.finish(q, r, snapshot, modelHash)
+	mark("render", renderStarted)
+	attachTimings()
+	return r
 }
 func hoverText(raw json.RawMessage) string {
 	var value any
@@ -336,6 +522,17 @@ func hoverText(raw json.RawMessage) string {
 	return text(value)
 }
 func (s *Session) finish(q Request, r Response, before, modelBefore string) Response {
+	if s.watcher != nil {
+		dirtyAll, paths := s.watcher.take()
+		stamp, err := artifactFingerprint(s.model)
+		if dirtyAll || len(paths) > 0 || err != nil || stamp != s.artifactStamp {
+			s.watcher.restore(dirtyAll, paths)
+			r.Status = "partial"
+			r.NextCursor = ""
+			r.Warnings = append(r.Warnings, "Workspace changed during query; repeat before relying on these results.")
+		}
+		return r
+	}
 	_, after, _, e := s.scan()
 	modelAfter, me := modelSnapshot(s.model)
 	if e != nil || me != nil || before != after || modelBefore != modelAfter {

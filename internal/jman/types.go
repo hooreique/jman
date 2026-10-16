@@ -10,17 +10,19 @@ import (
 )
 
 type Request struct {
-	Command    string    `json:"command"`
-	Project    string    `json:"project"`
-	File       string    `json:"file,omitempty"`
-	Line       int       `json:"line,omitempty"`
-	Column     int       `json:"column,omitempty"`
-	Symbol     string    `json:"symbol,omitempty"`
-	Occurrence int       `json:"occurrence,omitempty"`
-	Limit      int       `json:"limit"`
-	MaxBytes   int       `json:"maxBytes"`
-	Cursor     string    `json:"cursor,omitempty"`
-	Deadline   time.Time `json:"deadline"`
+	Command         string    `json:"command"`
+	Project         string    `json:"project"`
+	File            string    `json:"file,omitempty"`
+	Line            int       `json:"line,omitempty"`
+	Column          int       `json:"column,omitempty"`
+	Symbol          string    `json:"symbol,omitempty"`
+	Occurrence      int       `json:"occurrence,omitempty"`
+	Limit           int       `json:"limit"`
+	MaxBytes        int       `json:"maxBytes"`
+	Cursor          string    `json:"cursor,omitempty"`
+	Deadline        time.Time `json:"deadline"`
+	Timings         bool      `json:"timings,omitempty"`
+	StrictWorkspace bool      `json:"strictWorkspace,omitempty"`
 }
 type Problem struct {
 	Code       string `json:"code"`
@@ -29,16 +31,17 @@ type Problem struct {
 	NextAction string `json:"nextAction,omitempty"`
 }
 type Response struct {
-	SchemaVersion int      `json:"schemaVersion"`
-	Status        string   `json:"status"`
-	Query         Request  `json:"query"`
-	Context       any      `json:"context,omitempty"`
-	Snapshot      string   `json:"snapshot,omitempty"`
-	Results       []Result `json:"results"`
-	Coverage      any      `json:"coverage,omitempty"`
-	Warnings      []string `json:"warnings,omitempty"`
-	NextCursor    string   `json:"nextCursor,omitempty"`
-	Error         *Problem `json:"error,omitempty"`
+	SchemaVersion int              `json:"schemaVersion"`
+	Status        string           `json:"status"`
+	Query         Request          `json:"query"`
+	Context       any              `json:"context,omitempty"`
+	Snapshot      string           `json:"snapshot,omitempty"`
+	Results       []Result         `json:"results"`
+	Coverage      any              `json:"coverage,omitempty"`
+	Warnings      []string         `json:"warnings,omitempty"`
+	NextCursor    string           `json:"nextCursor,omitempty"`
+	Error         *Problem         `json:"error,omitempty"`
+	Timings       map[string]int64 `json:"timings,omitempty"`
 }
 type Result struct {
 	Name         string `json:"name,omitempty"`

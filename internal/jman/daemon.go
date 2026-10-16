@@ -105,10 +105,14 @@ func (m *manager) serve(w http.ResponseWriter, req *http.Request) {
 		response = reply(q)
 		response.Context = map[string]any{"daemonPid": os.Getpid(), "maxSessions": m.max, "idleTimeout": m.idleTimeout.String()}
 		m.mu.Lock()
+		sessions := make([]*Session, 0, len(m.sessions))
 		for _, s := range m.sessions {
-			response.Results = append(response.Results, Result{Name: s.root, Detail: s.status()})
+			sessions = append(sessions, s)
 		}
 		m.mu.Unlock()
+		for _, s := range sessions {
+			response.Results = append(response.Results, Result{Name: s.root, Detail: s.status(ctx)})
+		}
 		if len(response.Results) == 0 {
 			response.Results = append(response.Results, Result{Name: "daemon running (no active workspace sessions)"})
 		}
