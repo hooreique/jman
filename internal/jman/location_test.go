@@ -32,7 +32,10 @@ func TestUnicodeAndAmbiguity(t *testing.T) {
 	}
 }
 func TestProjectBoundary(t *testing.T) {
-	root := t.TempDir()
+	root, e := Canonical(t.TempDir())
+	if e != nil {
+		t.Fatal(e)
+	}
 	outer := filepath.Join(root, "settings.gradle")
 	if e := os.WriteFile(outer, nil, 0600); e != nil {
 		t.Fatal(e)
@@ -72,5 +75,29 @@ func TestSnapshotUsesContent(t *testing.T) {
 	}
 	if build != next {
 		t.Fatal("source edit invalidated build model")
+	}
+}
+
+func TestScanSkipsStaleOutputsButKeepsGeneratedSources(t *testing.T) {
+	root := t.TempDir()
+	for path, source := range map[string]string{
+		"bin/Stale.java":                         "class Stale {}",
+		"build/reports/Report.java":              "class Report {}",
+		"build/generated/sources/Generated.java": "class Generated {}",
+	} {
+		full := filepath.Join(root, path)
+		if err := os.MkdirAll(filepath.Dir(full), 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte(source), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	files, _, _, err := scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 1 || files[filepath.Join(root, "build/generated/sources/Generated.java")] == "" {
+		t.Fatalf("unexpected scanned files: %v", files)
 	}
 }

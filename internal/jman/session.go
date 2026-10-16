@@ -3,12 +3,15 @@ package jman
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -27,32 +30,41 @@ type Config struct {
 	Settings        map[string]any `json:"settings"`
 }
 type Session struct {
-	root         string
-	gate         chan struct{}
-	rpc          *lsp.Client
-	cmd          *exec.Cmd
-	processDone  chan struct{}
-	mu           sync.Mutex
-	state        string
-	message      string
-	initialError string
-	ready        chan struct{}
-	readyOnce    sync.Once
-	documents    map[string]string
-	versions     map[string]int
-	files        map[string]string
-	extraRoots   []string
-	buildHash    string
-	artifactHash string
-	model        *BuildModel
-	modelError   error
-	config       Config
-	settings     map[string]any
-	lastUsed     time.Time
-	failures     int
-	nextStart    time.Time
-	pid          int
-	maxHeapMiB   int
+	root          string
+	gate          chan struct{}
+	rpc           *lsp.Client
+	cmd           *exec.Cmd
+	processDone   chan struct{}
+	mu            sync.Mutex
+	state         string
+	message       string
+	initialError  string
+	ready         chan struct{}
+	readyOnce     sync.Once
+	documents     map[string]string
+	versions      map[string]int
+	files         map[string]string
+	extraRoots    []string
+	syncValid     bool
+	lastSnapshot  string
+	lastProblems  []any
+	lastSync      time.Time
+	watcher       *workspaceWatcher
+	watchHash     string
+	lastScan      time.Time
+	lastCacheHit  bool
+	buildHash     string
+	artifactHash  string
+	artifactStamp string
+	model         *BuildModel
+	modelError    error
+	config        Config
+	settings      map[string]any
+	lastUsed      time.Time
+	failures      int
+	nextStart     time.Time
+	pid           int
+	maxHeapMiB    int
 }
 
 func newSession(root string) *Session {
@@ -67,10 +79,57 @@ func (s *Session) acquire(ctx context.Context) error {
 	}
 }
 func (s *Session) release() { s.mu.Lock(); s.lastUsed = time.Now(); s.mu.Unlock(); <-s.gate }
-func (s *Session) status() map[string]any {
+func (s *Session) status(ctx context.Context) map[string]any {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	return map[string]any{"root": s.root, "state": s.state, "message": s.message, "lastUsed": s.lastUsed, "pid": s.pid, "jdtlsMaxHeapMiB": s.maxHeapMiB}
+	pid := s.pid
+	state, message, lastUsed, maxHeap := s.state, s.message, s.lastUsed, s.maxHeapMiB
+	lastSync, syncCached, lastScan, cacheHit := s.lastSync, s.syncValid, s.lastScan, s.lastCacheHit
+	watcher := s.watcher
+	s.mu.Unlock()
+	watcherState := "unavailable"
+	dirty := false
+	if watcher != nil {
+		watcherState = "active"
+		dirty = watcher.pending()
+	}
+	resources := jdtResources(ctx, pid)
+	return map[string]any{"root": s.root, "state": state, "message": message, "lastUsed": lastUsed, "pid": pid, "jdtlsMaxHeapMiB": maxHeap, "lastFullSync": lastSync, "syncCached": syncCached, "cacheHit": cacheHit, "watcher": watcherState, "dirty": dirty, "lastFullScan": lastScan, "resources": resources}
+}
+
+var heapUsage = regexp.MustCompile(`(?m)garbage-first heap\s+total\s+(\d+)K, used\s+(\d+)K`)
+
+func jdtResources(ctx context.Context, pid int) map[string]any {
+	resources := map[string]any{"rssKiB": nil, "heapUsedKiB": nil, "heapTotalKiB": nil}
+	if pid <= 0 {
+		return resources
+	}
+	// Resource metrics are best-effort and must not outlive the request or
+	// spend an unbounded time attaching to an unresponsive JVM.
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	if out, err := resourceOutput(ctx, "ps", "-o", "rss=", "-p", strconv.Itoa(pid)); err == nil {
+		if rss, err := strconv.Atoi(strings.TrimSpace(string(out))); err == nil {
+			resources["rssKiB"] = rss
+		}
+	}
+	if out, err := resourceOutput(ctx, "jcmd", strconv.Itoa(pid), "GC.heap_info"); err == nil {
+		if match := heapUsage.FindStringSubmatch(string(out)); len(match) == 3 {
+			resources["heapTotalKiB"], _ = strconv.Atoi(match[1])
+			resources["heapUsedKiB"], _ = strconv.Atoi(match[2])
+		}
+	}
+	return resources
+}
+func resourceOutput(ctx context.Context, name string, args ...string) ([]byte, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	cmd := exec.CommandContext(ctx, name, args...)
+	cmd.SysProcAttr = childProcessAttrs()
+	cmd.Cancel = func() error { return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL) }
+	// Also bound pipe draining if a descendant retains stdout after cancellation.
+	cmd.WaitDelay = 10 * time.Millisecond
+	return cmd.Output()
 }
 func (s *Session) lastAccess() time.Time { s.mu.Lock(); defer s.mu.Unlock(); return s.lastUsed }
 func (s *Session) setState(state, message string) {
@@ -306,6 +365,7 @@ func merge(dst, src map[string]any) {
 	}
 }
 func (s *Session) stop() {
+	s.replaceWatcher(nil)
 	if s.cmd != nil && s.cmd.Process != nil {
 		_ = syscall.Kill(-s.cmd.Process.Pid, syscall.SIGTERM)
 		select {
@@ -323,6 +383,15 @@ func (s *Session) stop() {
 	s.documents = map[string]string{}
 	s.versions = map[string]int{}
 	s.config = Config{}
+	s.mu.Lock()
+	s.syncValid = false
+	s.lastSnapshot = ""
+	s.lastProblems = nil
+	s.lastSync = time.Time{}
+	s.watchHash = ""
+	s.lastScan = time.Time{}
+	s.lastCacheHit = false
+	s.mu.Unlock()
 	s.setState("stopped", "")
 }
 func (s *Session) execute(ctx context.Context, command string, args []any, out any) error {
@@ -331,22 +400,36 @@ func (s *Session) execute(ctx context.Context, command string, args []any, out a
 
 // Hash inputs, not mtimes: branch switches and same-size rewrites must invalidate results.
 func scan(root string) (map[string]string, string, string, error) {
+	return scanTree(root, false)
+}
+
+func scanTree(root string, declared bool, projects ...[]string) (map[string]string, string, string, error) {
 	files := map[string]string{}
-	var names []string
+	var sourceRoots []string
+	if declared {
+		sourceRoots = []string{root}
+	}
 	e := filepath.WalkDir(root, func(path string, d fs.DirEntry, e error) error {
 		if e != nil {
 			return e
 		}
-		if d.IsDir() {
-			switch d.Name() {
-			case ".git", ".gradle", ".metadata", "node_modules", ".jman-cache":
+		if !scanPathIncluded(path, d.IsDir(), []string{root}, sourceRoots, projects...) {
+			if d.IsDir() {
+				for _, roots := range projects {
+					for _, root := range roots {
+						if withinRoot(root, path) {
+							return nil
+						}
+					}
+				}
 				return filepath.SkipDir
 			}
 			return nil
 		}
-		name := d.Name()
-		ext := filepath.Ext(name)
-		if ext != ".java" && ext != ".gradle" && ext != ".kts" && ext != ".toml" && ext != ".properties" && ext != ".lockfile" && ext != ".jar" && name != ".jman.json" && name != "pom.xml" && name != ".classpath" {
+		if d.IsDir() {
+			return nil
+		}
+		if !trackedFile(d.Name()) {
 			return nil
 		}
 		b, e := os.ReadFile(path)
@@ -354,11 +437,28 @@ func scan(root string) (map[string]string, string, string, error) {
 			return e
 		}
 		files[path] = digest(b)
-		names = append(names, path)
 		return nil
 	})
 	if e != nil {
 		return nil, "", "", e
+	}
+	return snapshotFiles(files)
+}
+func ignoredScanDirectory(name string) bool {
+	switch name {
+	case ".git", ".gradle", ".metadata", "node_modules", ".jman-cache", ".idea", ".settings", "bin", "reports", "test-results", "coverage":
+		return true
+	}
+	return false
+}
+func trackedFile(name string) bool {
+	ext := filepath.Ext(name)
+	return ext == ".java" || ext == ".gradle" || ext == ".kts" || ext == ".toml" || ext == ".properties" || ext == ".lockfile" || ext == ".jar" || name == ".jman.json" || name == "pom.xml" || name == ".classpath"
+}
+func snapshotFiles(files map[string]string) (map[string]string, string, string, error) {
+	names := make([]string, 0, len(files))
+	for path := range files {
+		names = append(names, path)
 	}
 	sort.Strings(names)
 	var all, build strings.Builder
@@ -370,6 +470,77 @@ func scan(root string) (map[string]string, string, string, error) {
 		}
 	}
 	return files, digest([]byte(all.String())), digest([]byte(build.String())), nil
+}
+func (s *Session) scanDirty(paths []string) (map[string]string, string, string, error) {
+	files := make(map[string]string, len(s.files))
+	for path, hash := range s.files {
+		files[path] = hash
+	}
+	roots, sourceRoots := s.scanRoots(), s.model.sourceRoots()
+	projectRoots := s.projectRoots()
+	for _, path := range paths {
+		if !scanPathIncluded(path, false, roots, sourceRoots, projectRoots) || !trackedFile(filepath.Base(path)) {
+			delete(files, path)
+			continue
+		}
+		info, err := os.Stat(path)
+		if errors.Is(err, os.ErrNotExist) {
+			delete(files, path)
+			continue
+		}
+		if err != nil {
+			return nil, "", "", err
+		}
+		if info.IsDir() {
+			return nil, "", "", fmt.Errorf("directory changed: %s", path)
+		}
+		hash, err := fileDigest(path)
+		if err != nil {
+			return nil, "", "", err
+		}
+		files[path] = hash
+	}
+	return snapshotFiles(files)
+}
+func (s *Session) startWatcher() {
+	roots := s.scanRoots()
+	sourceRoots := s.model.sourceRoots()
+	projectRoots := s.projectRoots()
+	roots = append(roots, projectRoots...)
+	for _, root := range sourceRoots {
+		// Watch the nearest existing ancestor for sources created after import.
+		for {
+			if _, err := os.Stat(root); !errors.Is(err, os.ErrNotExist) {
+				break
+			}
+			parent := filepath.Dir(root)
+			if parent == root {
+				break
+			}
+			root = parent
+		}
+		roots = append(roots, root)
+	}
+	watcher, err := newWorkspaceWatcher(roots, sourceRoots, projectRoots)
+	if err != nil {
+		watcher = nil
+	}
+	s.replaceWatcher(watcher)
+	if hash, err := workspaceFingerprint(s.root); err == nil {
+		s.watchHash = hash
+	}
+}
+
+// Publish the replacement before closing the old watcher. Status readers only
+// observe the pointer under mu; native shutdown must not hold the session lock.
+func (s *Session) replaceWatcher(watcher *workspaceWatcher) {
+	s.mu.Lock()
+	old := s.watcher
+	s.watcher = watcher
+	s.mu.Unlock()
+	if old != nil {
+		old.close()
+	}
 }
 func (s *Session) sync(ctx context.Context, files map[string]string) ([]any, error) {
 	changes := []any{}
@@ -414,34 +585,80 @@ func (s *Session) sync(ctx context.Context, files map[string]string) ([]any, err
 	}
 	s.files = files
 	s.extraRoots = out.ProjectRoots
+	s.lastProblems = out.Problems
 	s.setState("ready", "")
 	if len(out.Problems) > 0 {
 		s.setState("degraded", fmt.Sprintf("%d project errors", len(out.Problems)))
 	}
 	return out.Problems, nil
 }
+func filesChanged(previous, current map[string]string) bool {
+	if len(previous) != len(current) {
+		return true
+	}
+	for path, hash := range current {
+		if previous[path] != hash {
+			return true
+		}
+	}
+	return false
+}
 func (s *Session) scan() (map[string]string, string, string, error) {
-	files, snapshot, build, e := scan(s.root)
+	projectRoots := s.projectRoots()
+	files, _, _, e := scanTree(s.root, false, projectRoots)
 	if e != nil {
 		return nil, "", "", e
 	}
-	roots := append([]string{}, s.extraRoots...)
+	roots := append(append([]string{}, s.extraRoots...), projectRoots...)
 	sort.Strings(roots)
 	for _, root := range roots {
-		if root == s.root || strings.HasPrefix(root, s.root+string(os.PathSeparator)) {
+		if withinRoot(root, s.root) {
 			continue
 		}
-		extra, hash, bh, err := scan(root)
+		extra, _, _, err := scanTree(root, false, projectRoots)
 		if err != nil {
 			return nil, "", "", err
 		}
 		for k, v := range extra {
 			files[k] = v
 		}
-		snapshot = digest([]byte(snapshot + root + hash))
-		build = digest([]byte(build + root + bh))
 	}
-	return files, snapshot, build, nil
+	for _, root := range s.model.sourceRoots() {
+		if _, err := os.Stat(root); errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+		extra, _, _, err := scanTree(root, true)
+		if err != nil {
+			return nil, "", "", err
+		}
+		for path, hash := range extra {
+			files[path] = hash
+		}
+	}
+	return snapshotFiles(files)
+}
+
+func (s *Session) projectRoots() []string {
+	var roots []string
+	if s.model != nil {
+		roots = append(roots, s.model.ProjectRoots...)
+	}
+	// The first scan precedes model export, so protect the Gradle workspace root
+	// immediately. Subprojects come from Gradle, not directory-name heuristics.
+	if isGradleProject(s.root) {
+		roots = append(roots, s.root)
+	}
+	return roots
+}
+
+func (s *Session) scanRoots() []string {
+	roots := []string{s.root}
+	for _, root := range s.extraRoots {
+		if !withinRoot(root, s.root) {
+			roots = append(roots, root)
+		}
+	}
+	return roots
 }
 func (s *Session) open(path, text string) error {
 	old, exists := s.documents[path]

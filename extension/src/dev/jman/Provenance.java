@@ -31,7 +31,8 @@ public final class Provenance implements IDelegateCommandHandler {
             for (IMarker marker : ResourcesPlugin.getWorkspace().getRoot().findMarkers(IMarker.PROBLEM, true, IResource.DEPTH_INFINITE)) {
                 if (marker.getAttribute(IMarker.SEVERITY, 0) == IMarker.SEVERITY_ERROR && problems.size() < 100) {
                     problems.add(Map.of("message", marker.getAttribute(IMarker.MESSAGE, ""),
-                        "path", marker.getResource().getFullPath().toString()));
+                        "path", marker.getResource().getFullPath().toString(),
+                        "location", marker.getResource().getLocation() == null ? "" : marker.getResource().getLocation().toOSString()));
                 }
             }
             List<String> roots = new ArrayList<>();

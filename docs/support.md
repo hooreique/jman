@@ -17,6 +17,13 @@ This document defines shipped behavior for 0.1. Product goals live in [requireme
 
 Content fingerprints favor correctness over speed. They can be expensive in large workspaces.
 
+On macOS, native watchers track workspace changes; Gradle-declared Java source
+roots override directory exclusions, including roots created after import.
+Selected external artifact metadata is checked on every query; changed artifacts
+are content-hashed and restart the session when their identity changes. Build
+inputs changing during sync trigger a bounded model/session reload rather than
+committing the new inputs against an old model. `refresh` forces revalidation.
+
 ## Memory and session controls
 
 | Setting | Default | Scope |
@@ -83,6 +90,10 @@ On macOS, stop the old daemon before upgrading. The previous `~/Library/Caches/j
 - Build-model or binding failures produce `partial` or error results, not a successful empty answer.
 - References cover the imported workspace, not unknown downstream repositories.
 - A compiler/runtime fixture or scripted adapter does not prove an LLM cost reduction.
+- Caller-source-set errors and source sets whose outputs are on the caller's
+  Gradle-selected compile classpath are critical (including selected test variants);
+  other mapped errors are advisory and unmapped errors remain visible as unknown.
+  `--strict-workspace` makes every workspace error critical.
 
 ## Not supported
 

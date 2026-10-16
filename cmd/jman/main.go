@@ -45,6 +45,8 @@ Options:
   --timeout 120s   End-to-end deadline, including startup and queue
   --json          Versioned structured response
   --explain       Include full provenance and coverage in text output
+  --timings       Include per-stage elapsed milliseconds in JSON output
+  --strict-workspace  Treat every workspace error as query-critical
 
 Daemon defaults: --max-sessions 5 --idle-timeout 15m (minimum 1s)
 Environment: JMAN_SOCKET, JMAN_CACHE_HOME, XDG_CACHE_HOME, XDG_RUNTIME_DIR
@@ -94,13 +96,15 @@ func run(args []string) int {
 	flags.StringVar(&q.Cursor, "cursor", "", "page cursor")
 	jsonOut := flags.Bool("json", false, "JSON output")
 	explain := flags.Bool("explain", false, "full details")
+	flags.BoolVar(&q.Timings, "timings", false, "include per-stage timings in JSON")
+	flags.BoolVar(&q.StrictWorkspace, "strict-workspace", false, "treat every workspace error as critical")
 	timeout := flags.Duration("timeout", 120*time.Second, "deadline")
 	lines := flags.String("lines", "1:80", "source range")
 	generate := flags.Bool("generate", false, "run configured generation tasks")
 	// Go's flag parser stops at a positional argument; accept conventional flags after LOCATION.
 	var positional []string
 	var options []string
-	booleans := map[string]bool{"--json": true, "--explain": true, "--generate": true, "--help": true, "-h": true}
+	booleans := map[string]bool{"--json": true, "--explain": true, "--timings": true, "--strict-workspace": true, "--generate": true, "--help": true, "-h": true}
 	for i := 0; i < len(args); i++ {
 		a := args[i]
 		if strings.HasPrefix(a, "-") {

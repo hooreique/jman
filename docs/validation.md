@@ -1,6 +1,6 @@
 # Validation record
 
-Last updated: 2026-09-28. Runtime versions and fixture artifacts are fixed by `flake.lock` and Nix hashes.
+Last updated: 2026-10-16. Runtime versions and fixture artifacts are fixed by `flake.lock` and Nix hashes.
 
 ## Repeatable checks
 
@@ -22,6 +22,50 @@ It verifies:
 - benchmark isolation, custom suites, evaluator timeouts, missing usage, and provider usage accounting.
 
 The Spring fixture proves runtime behavior; it does not make static references a proxy-runtime analyzer.
+
+## macOS optimization stabilization
+
+On aarch64-darwin, Go race tests and vet passed. The targeted watcher/cache,
+source-set, composite-snapshot, status-concurrency, and canonical-path regression
+tests also passed ten consecutive race-detector runs. The existing project-root
+test now compares canonical paths, including macOS's `/tmp` symlink.
+
+`nix flake check --no-write-lock-file --print-build-logs` completed successfully,
+including race/vet, real JDTLS source-set/composite regressions, benchmark tests,
+and package checks. Linux checks were deliberately not run. Nix emitted a
+non-fatal `audit-tmpdir.sh` fixup-hook segmentation fault while building the
+extension; the build and all checks still completed with exit status zero.
+This is a packaging-tool caveat, not a silently omitted test failure.
+
+The [controlled large-workspace warm trial](../reports/2026-10-16-macos-warm-navigation-report.md)
+records 60 successful cache-hit navigation requests on 6,003 Java files. It is
+synthetic, not a representative workspace or Linux latency measurement.
+
+The subsequent [freshness regression checks](../reports/2026-10-16-macos-freshness-workspace-report.md)
+verify external JAR changes and declared excluded source roots against forced
+refresh. Non-public workspace measurements are omitted. Additional Go
+race regressions exercise mid-sync model reload, selected variant/classpath
+classification, and native watching of initially missing source roots.
+
+## optimize completion — 2026-10-16
+
+- Validated code revision: `02a6eeb` (final code tested before commit; subsequent
+  changes only update documentation and remove completed checklists).
+- Environment: aarch64-darwin, repository-pinned Nix/Java 21/Gradle 8.14.4/JDTLS
+  1.60.0. Linux runtime checks were not run.
+- Targeted Go scan/cache/watcher/recovery/concurrency regressions passed. Real
+  Gradle/JDTLS regressions passed for both a `reports` project root and a
+  `:reports` subproject: selecting existing JAR B instead of A automatically
+  changed the definition and snapshot, matching forced refresh.
+- `nix flake check --no-write-lock-file --print-build-logs` passed, including
+  race/vet, integration compile/runtime oracles, diagnostics, resource/status,
+  benchmark, and package checks. Existing unrelated-output exclusions passed.
+- The integration runner's settled warm smoke passed: three consecutive
+  `prepare` cache hits with `dirty: false`, followed by three each of definition,
+  references, and implementations for `PersonMapper.toDto`. All nine retained
+  expected results, snapshot, warnings and coverage, with `scan: 0`, `sync: 0`.
+- Environment workaround: canonical `TMPDIR` for the targeted integration run.
+  The final flake check needed no workaround or cleanup retry.
 
 ## Resource controls and profiling
 

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"syscall"
 )
@@ -17,17 +18,21 @@ type Artifact struct {
 	Variant          string            `json:"variant"`
 	Attributes       map[string]string `json:"attributes"`
 	ProjectComponent bool              `json:"projectComponent"`
+	ProjectPath      string            `json:"projectPath"`
 	ModuleComponent  bool              `json:"moduleComponent"`
 }
 type BuildContext struct {
-	Project       string     `json:"project"`
-	SourceSet     string     `json:"sourceSet"`
-	Configuration string     `json:"configuration"`
-	Roots         []string   `json:"roots"`
-	Artifacts     []Artifact `json:"artifacts"`
+	Project          string     `json:"project"`
+	SourceSet        string     `json:"sourceSet"`
+	Configuration    string     `json:"configuration"`
+	Roots            []string   `json:"roots"`
+	Artifacts        []Artifact `json:"artifacts"`
+	Outputs          []string   `json:"outputs"`
+	CompileClasspath []string   `json:"compileClasspath"`
 }
 type BuildModel struct {
-	Contexts []BuildContext `json:"contexts"`
+	Contexts     []BuildContext `json:"contexts"`
+	ProjectRoots []string       `json:"projectRoots,omitempty"`
 }
 
 func gradleCommand(ctx context.Context, root string, args ...string) *exec.Cmd {
@@ -56,14 +61,16 @@ func gradleCommand(ctx context.Context, root string, args ...string) *exec.Cmd {
 	}
 	return cmd
 }
-func loadModel(ctx context.Context, root string) (*BuildModel, error) {
-	isGradle := false
+func isGradleProject(root string) bool {
 	for _, name := range []string{"settings.gradle", "settings.gradle.kts", "build.gradle", "build.gradle.kts"} {
 		if _, e := os.Stat(filepath.Join(root, name)); e == nil {
-			isGradle = true
+			return true
 		}
 	}
-	if !isGradle {
+	return false
+}
+func loadModel(ctx context.Context, root string) (*BuildModel, error) {
+	if !isGradleProject(root) {
 		return nil, nil
 	}
 	script := os.Getenv("JMAN_GRADLE_MODEL")
@@ -126,6 +133,56 @@ func (m *BuildModel) context(file string) *BuildContext {
 	}
 	return best
 }
+func (m *BuildModel) compileClosure(caller *BuildContext) map[*BuildContext]bool {
+	closure := map[*BuildContext]bool{}
+	if m == nil || caller == nil {
+		return closure
+	}
+	closure[caller] = true
+	selected := map[string]bool{}
+	for _, path := range caller.CompileClasspath {
+		selected[filepath.Clean(path)] = true
+	}
+	for _, artifact := range caller.Artifacts {
+		selected[filepath.Clean(artifact.Path)] = true
+	}
+	// Gradle already resolved transitivity, variant selection, and excludes.
+	for i := range m.Contexts {
+		context := &m.Contexts[i]
+		for _, output := range context.Outputs {
+			if selected[filepath.Clean(output)] {
+				closure[context] = true
+			}
+		}
+	}
+	return closure
+}
+func (m *BuildModel) sourceRoots() []string {
+	var roots []string
+	if m != nil {
+		for _, c := range m.Contexts {
+			roots = append(roots, c.Roots...)
+		}
+	}
+	return roots
+}
+
+func (m *BuildModel) artifactPaths() []string {
+	var paths []string
+	seen := map[string]bool{}
+	if m != nil {
+		for _, c := range m.Contexts {
+			for _, a := range c.Artifacts {
+				if !a.ProjectComponent && !seen[a.Path] {
+					paths = append(paths, a.Path)
+					seen[a.Path] = true
+				}
+			}
+		}
+	}
+	return paths
+}
+
 func modelSnapshot(model *BuildModel) (string, error) {
 	if model == nil {
 		return "", nil
@@ -158,6 +215,32 @@ func modelSnapshot(model *BuildModel) (string, error) {
 			}
 			inputs.WriteString(hash)
 		}
+	}
+	return digest([]byte(inputs.String())), nil
+}
+
+// Stat selected external artifacts on every request, but hash their contents
+// only when metadata changes. ctime catches same-size, restored-mtime writes.
+func artifactFingerprint(model *BuildModel) (string, error) {
+	var inputs strings.Builder
+	for _, path := range model.artifactPaths() {
+		info, err := os.Stat(path)
+		if err != nil {
+			return "", err
+		}
+		ctime := ""
+		stat := reflect.ValueOf(info.Sys())
+		if stat.Kind() == reflect.Pointer {
+			stat = stat.Elem()
+		}
+		if stat.Kind() == reflect.Struct {
+			for _, name := range []string{"Dev", "Ino", "Ctimespec", "Ctim"} {
+				if field := stat.FieldByName(name); field.IsValid() {
+					ctime += fmt.Sprint(field.Interface()) + ":"
+				}
+			}
+		}
+		fmt.Fprintf(&inputs, "%s\x00%d\x00%d\x00%s\n", path, info.Size(), info.ModTime().UnixNano(), ctime)
 	}
 	return digest([]byte(inputs.String())), nil
 }
