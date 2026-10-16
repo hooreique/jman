@@ -13,8 +13,9 @@ import (
 // set. Platform implementations watch all existing workspace directories;
 // directory creation/removal is promoted to a full scan and watcher rebuild.
 type workspaceWatcher struct {
-	source platformWatcher
-	done   chan struct{}
+	source  platformWatcher
+	done    chan struct{}
+	barrier chan chan struct{}
 
 	mu       sync.Mutex
 	dirtyAll bool
@@ -26,7 +27,7 @@ func newWorkspaceWatcher(roots []string, declared ...[]string) (*workspaceWatche
 	if err != nil {
 		return nil, err
 	}
-	w := &workspaceWatcher{source: source, done: make(chan struct{}), paths: map[string]struct{}{}}
+	w := &workspaceWatcher{source: source, done: make(chan struct{}), barrier: make(chan chan struct{}), paths: map[string]struct{}{}}
 	go w.run()
 	return w, nil
 }
@@ -95,16 +96,24 @@ func (w *workspaceWatcher) run() {
 				w.markAll()
 				return
 			}
-			if path == "" {
-				w.markAll()
-				continue
+			w.record(path)
+		case ack := <-w.barrier:
+			// The native flush has delivered its events; consume the buffered
+			// remainder before acknowledging the snapshot boundary.
+		drain:
+			for {
+				select {
+				case path, ok := <-w.source.events():
+					if !ok {
+						w.markAll()
+						break drain
+					}
+					w.record(path)
+				default:
+					break drain
+				}
 			}
-			// A directory change cannot be incrementally enumerated safely.
-			if info, err := os.Stat(path); err == nil && info.IsDir() {
-				w.markAll()
-				continue
-			}
-			w.mark(path)
+			close(ack)
 		case _, ok := <-w.source.errors():
 			if !ok {
 				w.markAll()
@@ -113,6 +122,18 @@ func (w *workspaceWatcher) run() {
 			w.markAll()
 		}
 	}
+}
+
+func (w *workspaceWatcher) record(path string) {
+	if path == "" {
+		w.markAll()
+		return
+	}
+	if info, err := os.Stat(path); err == nil && info.IsDir() {
+		w.markAll()
+		return
+	}
+	w.mark(path)
 }
 
 func (w *workspaceWatcher) mark(path string) {
@@ -132,6 +153,20 @@ func (w *workspaceWatcher) markAll() {
 }
 
 func (w *workspaceWatcher) take() (bool, []string) {
+	// Linux can synchronously drain inotify before trusting a cached snapshot.
+	// A second barrier waits for this goroutine to apply those delivered events.
+	if source, ok := w.source.(interface{ flush() }); ok && w.barrier != nil {
+		source.flush()
+		ack := make(chan struct{})
+		select {
+		case w.barrier <- ack:
+			select {
+			case <-ack:
+			case <-w.done:
+			}
+		case <-w.done:
+		}
+	}
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	all := w.dirtyAll

@@ -40,6 +40,13 @@ def main():
                     raise AssertionError(f"{command}: {result.returncode}\n{result.stdout}\n{result.stderr}")
                 return json.loads(result.stdout)
 
+            def session_status(status=None):
+                # Status lists every session in unspecified order. Match the
+                # active workspace, including when earlier fixtures remain live.
+                status = query("status") if status is None else status
+                return next(v["detail"] for v in status["results"]
+                            if v["name"] == str(project.resolve()))
+
             # Actual Gradle projects named like excluded output directories must
             # observe selection changes between two already-existing JARs.
             import zipfile
@@ -51,7 +58,7 @@ def main():
                 classes = artifact_dir / name
                 classes.mkdir()
                 api.write_text(f'package dependency; public class Api {{ public static String apply(String value) {{ return value.{method}(); }} }}\n')
-                subprocess.run(["javac", "-d", str(classes), str(api)], check=True, capture_output=True)
+                subprocess.run(["javac", "--release", "17", "-d", str(classes), str(api)], check=True, capture_output=True)
                 jar_path = artifact_dir / f"{name}.jar"
                 with zipfile.ZipFile(jar_path, "w") as archive:
                     archive.write(classes / "dependency/Api.class", "dependency/Api.class")
@@ -65,7 +72,7 @@ def main():
                 (project / "settings.gradle").write_text("rootProject.name = 'reports-regression'\n" + ("include ':reports'\n" if structure == "subproject" else ""))
                 (project / ".jman.json").write_text('{"offline":true,"jdtlsMaxHeapMiB":768}')
                 build_file = module / "build.gradle"
-                build_text = "plugins { id 'java' }\ndependencies { implementation files(%s) }\n"
+                build_text = "plugins { id 'java' }\njava { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }\ndependencies { implementation files(%s) }\n"
                 build_file.write_text(build_text % json.dumps(str(jars[0])))
                 caller = module / "src/main/java/Caller.java"
                 caller.parent.mkdir(parents=True)
@@ -97,7 +104,7 @@ def main():
             initial_status = query("status")
             assert initial_status["context"]["maxSessions"] == 2, initial_status
             assert initial_status["context"]["idleTimeout"] == "15m0s", initial_status
-            initial_session = initial_status["results"][0]["detail"]
+            initial_session = session_status(initial_status)
             assert initial_session["pid"] > 0 and initial_session["jdtlsMaxHeapMiB"] == 1024, initial_status
             location = fixture["location"]
             found = query("definition", location, "--symbol", "normalize")
@@ -147,7 +154,7 @@ def main():
             build.write_text(original_build.replace("implementation 'com.acme:shared-text:2.4.1'", "implementation 'com.acme:shared-text:1.0.0'; constraints { implementation 'com.acme:shared-text:2.4.1' }"))
             conflict = query("definition", location, "--symbol", "normalize", expected=(0, 3))
             assert conflict["results"][0]["artifact"] == "com.acme:shared-text:2.4.1", conflict
-            changed_session = query("status")["results"][0]["detail"]
+            changed_session = session_status()
             assert changed_session["pid"] != initial_session["pid"], changed_session
             assert changed_session["jdtlsMaxHeapMiB"] == 768, changed_session
             print("PASS configured heap and effective session status after restart", flush=True)
@@ -187,19 +194,19 @@ def main():
             assert composite["results"] and "internal-text" in composite["results"][0]["path"], composite
             assert composite["results"][0]["origin"] == "workspace-source", composite
 
-            composite_pid = query("status")["results"][0]["detail"]["pid"]
+            composite_pid = session_status()["pid"]
             included_source = Path(composite["results"][0]["path"])
             included_source.write_text(included_source.read_text() + "\n// composite incremental regression\n")
             incremental = query("definition", location, "--symbol", "normalize", expected=(0, 3))
             assert incremental["snapshot"] != composite["snapshot"], incremental
-            assert query("status")["results"][0]["detail"]["pid"] == composite_pid
+            assert session_status()["pid"] == composite_pid
             # An unchanged build-file touch forces fingerprint/full-scan validation
             # without changing the build content or intentionally restarting JDTLS.
             os.utime(build, None)
             full_snapshot = query("prepare", "--timings", expected=(0, 3))
             assert full_snapshot["snapshot"] == incremental["snapshot"], full_snapshot
             assert full_snapshot["timings"]["sync"] == 0, full_snapshot
-            assert query("status")["results"][0]["detail"]["pid"] == composite_pid
+            assert session_status()["pid"] == composite_pid
             settings.write_text(original_settings)
             query("refresh", expected=(0, 3))
             print("PASS multi-repository composite build follows actual substitution", flush=True)
@@ -237,12 +244,12 @@ def main():
 
             def replace_jar(method):
                 api.write_text(f'package dependency; public class Api {{ public static String apply(String value) {{ return value.{method}(); }} }}\n')
-                subprocess.run(["javac", "-d", str(classes), str(api)], check=True, capture_output=True)
+                subprocess.run(["javac", "--release", "17", "-d", str(classes), str(api)], check=True, capture_output=True)
                 with zipfile.ZipFile(jar, "w") as archive:
                     archive.write(classes / "dependency/Api.class", "dependency/Api.class")
 
             replace_jar("toUpperCase")
-            (project / "build.gradle").write_text("plugins { id 'java' }\nsourceSets.main.java.srcDirs = ['reports/coverage']\ndependencies { implementation files(" + json.dumps(str(jar)) + ") }\n")
+            (project / "build.gradle").write_text("plugins { id 'java' }\njava { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }\nsourceSets.main.java.srcDirs = ['reports/coverage']\ndependencies { implementation files(" + json.dumps(str(jar)) + ") }\n")
             (project / ".jman.json").write_text('{"offline":true,"jdtlsMaxHeapMiB":768}')
             declared = project / "reports/coverage/Caller.java"
             declared.parent.mkdir(parents=True)
@@ -254,14 +261,14 @@ def main():
             for _ in range(3):
                 time.sleep(.2)
                 query("prepare", expected=(0, 3))
-            old_pid = next(v["detail"]["pid"] for v in query("status")["results"] if v["name"] == str(project))
+            old_pid = session_status()["pid"]
             replace_jar("toLowerCase")
             external_after = query("definition", external_location, "--symbol", "apply", expected=(0, 3))
             assert external_after["snapshot"] != external_before["snapshot"], external_after
             assert external_after["results"][0]["binaryDigest"] == hashlib.sha256(jar.read_bytes()).hexdigest(), external_after
             assert "toLowerCase" in external_after["results"][0]["snippet"] and "toUpperCase" not in external_after["results"][0]["snippet"], external_after
             assert external_after["results"][0]["path"] != external_before["results"][0]["path"], external_after
-            new_pid = next(v["detail"]["pid"] for v in query("status")["results"] if v["name"] == str(project))
+            new_pid = session_status()["pid"]
             assert new_pid != old_pid
             query("refresh", expected=(0, 3))
             external_refreshed = query("definition", external_location, "--symbol", "apply", expected=(0, 3))

@@ -17,8 +17,8 @@ This document defines shipped behavior for 0.1. Product goals live in [requireme
 
 Content fingerprints favor correctness over speed. They can be expensive in large workspaces.
 
-On macOS, native watchers track workspace changes; Gradle-declared Java source
-roots override directory exclusions, including roots created after import.
+On macOS (kqueue) and Linux (inotify), native watchers track workspace changes.
+Gradle-declared Java source roots override directory exclusions, including roots created after import.
 Selected external artifact metadata is checked on every query; changed artifacts
 are content-hashed and restart the session when their identity changes. Build
 inputs changing during sync trigger a bounded model/session reload rather than
