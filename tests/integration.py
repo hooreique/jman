@@ -107,6 +107,25 @@ def main():
             initial_session = session_status(initial_status)
             assert initial_session["pid"] > 0 and initial_session["jdtlsMaxHeapMiB"] == 1024, initial_status
             location = fixture["location"]
+            for command, args in (("prepare", []), ("doctor", []),
+                                  ("deps", [location]),
+                                  ("definition", [location, "--symbol", "normalize"])):
+                text = subprocess.run(
+                    [binary, command, *args, "--max-bytes", "512", "--timeout", "180s"],
+                    cwd=project, env=env, capture_output=True, timeout=190)
+                assert text.returncode in (0, 3), (command, text.stderr)
+                assert len(text.stdout) <= 512, (command, len(text.stdout))
+                assert b'"artifacts"' not in text.stdout and b'"compileClasspath"' not in text.stdout, command
+                if command == "prepare":
+                    assert b"model:" in text.stdout and b"status:" in text.stdout, text.stdout
+            explained = subprocess.run(
+                [binary, "prepare", "--explain", "--max-bytes", "512", "--timeout", "180s"],
+                cwd=project, env=env, capture_output=True, timeout=190)
+            assert explained.returncode in (0, 3), explained.stderr
+            assert b'"artifacts"' in explained.stdout and b'"settings"' in explained.stdout, explained.stdout
+            assert len(explained.stdout) > 512, len(explained.stdout)
+            assert prepared["results"][0]["detail"]["model"]["contexts"], prepared
+            print("PASS compact text budget and opt-in full text/JSON details", flush=True)
             found = query("definition", location, "--symbol", "normalize")
             definition = found["results"][0]
             assert definition["artifact"] == fixture["artifact"], found

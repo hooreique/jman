@@ -115,7 +115,25 @@ On macOS, stop the old daemon before upgrading. The previous `~/Library/Caches/j
 | 3 | `partial` or `not-ready` result |
 | 4 | Protocol or execution failure |
 
-`--limit` bounds result count. `--max-bytes` bounds source excerpts, not the full JSON response.
+## Output controls
+
+Default text summarizes workspace health, build counts, caller context, and
+diagnostic counts instead of dumping the Gradle model. `doctor` lists actionable
+problems; `deps` lists dependency coordinates. `--limit` (default 20) bounds
+navigation pages and displayed summary entries (problems, artifacts, sessions).
+Omitted entries include a count and instructions for viewing more.
+
+`--max-bytes` (default 8192) bounds default text as well as source excerpts.
+Warnings and coverage precede results; truncation keeps the response status and
+next-page cursor. To see cut-off results from the current page, rerun with a
+larger budget before advancing the cursor. Very long summary fields are clipped
+to 512 bytes; full values remain available in detailed output.
+
+`--explain` renders full text details, including build model, settings, provenance,
+and coverage. `--json` preserves the full schema-1 response for machine readers.
+Neither has a total-response byte limit; large builds can produce megabytes.
+For tool-assisted exploration prefer default text, or redirect full JSON to a
+file and select the needed fields. Source excerpts remain byte-bounded in both modes.
 
 ## Benchmark suite contract
 

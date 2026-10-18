@@ -39,12 +39,12 @@ Options:
   --symbol NAME    Select identifier on the given line
   --occurrence N   Disambiguate repeated identifiers (1-based)
   --file PATH --line N --column N   Explicit location; Unicode columns are 1-based
-  --limit N        Results per page (default 20)
-  --max-bytes N    Source excerpt budget (default 8192)
+  --limit N        Results per page / summary entries (default 20)
+  --max-bytes N    Default text / source excerpt budget (default 8192)
   --cursor TOKEN   Next page of the same snapshot
   --timeout 120s   End-to-end deadline, including startup and queue
-  --json          Versioned structured response
-  --explain       Include full provenance and coverage in text output
+  --json          Full versioned structured response (not byte-bounded)
+  --explain       Full text details, including build model (not byte-bounded)
   --timings       Include per-stage elapsed milliseconds in JSON output
   --strict-workspace  Treat every workspace error as query-critical
 
@@ -91,8 +91,8 @@ func run(args []string) int {
 	flags.IntVar(&q.Column, "column", 0, "column")
 	flags.StringVar(&q.Symbol, "symbol", "", "identifier")
 	flags.IntVar(&q.Occurrence, "occurrence", 0, "occurrence")
-	flags.IntVar(&q.Limit, "limit", 20, "page limit")
-	flags.IntVar(&q.MaxBytes, "max-bytes", 8192, "excerpt byte budget")
+	flags.IntVar(&q.Limit, "limit", 20, "page limit / summary entries")
+	flags.IntVar(&q.MaxBytes, "max-bytes", 8192, "default text / excerpt byte budget")
 	flags.StringVar(&q.Cursor, "cursor", "", "page cursor")
 	jsonOut := flags.Bool("json", false, "JSON output")
 	explain := flags.Bool("explain", false, "full details")
@@ -208,7 +208,7 @@ func run(args []string) int {
 		return 4
 	}
 }
-func render(r jman.Response, explain bool) {
+func renderFull(r jman.Response, explain bool) {
 	if r.Error != nil {
 		fmt.Printf("%s: %s\n", r.Error.Code, r.Error.Message)
 		if r.Error.NextAction != "" {
@@ -294,10 +294,7 @@ func readSource(path, lines string, limit int, jsonOut bool) int {
 	if jsonOut {
 		_ = json.NewEncoder(os.Stdout).Encode(map[string]any{"schemaVersion": 1, "path": path, "text": out.String(), "truncated": truncated})
 	} else {
-		fmt.Print(out.String())
-		if truncated {
-			fmt.Println("… truncated; narrow --lines or increase --max-bytes")
-		}
+		renderRead(os.Stdout, out.String(), truncated, limit)
 	}
 	return 0
 }

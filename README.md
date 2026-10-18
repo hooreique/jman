@@ -105,6 +105,10 @@ jman definition src/main/java/example/OrderService.java:42 --symbol normalize --
 jman read /path/from/definition/Source.java --lines 20:60
 ```
 
+Default text is compact and byte-bounded; `prepare`, `refresh`, `doctor`, and
+`deps` summarize rather than dump the build model. `--explain` and `--json`
+retain full details and may be large. See [output controls](docs/support.md#output-controls).
+
 Lines and columns are 1-based; columns use Unicode code points. When a symbol occurs more than once on a line, pass `--occurrence N` or an exact column.
 
 ## Configure a project
