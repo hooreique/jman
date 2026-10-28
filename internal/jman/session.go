@@ -30,41 +30,45 @@ type Config struct {
 	Settings        map[string]any `json:"settings"`
 }
 type Session struct {
-	root          string
-	gate          chan struct{}
-	rpc           *lsp.Client
-	cmd           *exec.Cmd
-	processDone   chan struct{}
-	mu            sync.Mutex
-	state         string
-	message       string
-	initialError  string
-	ready         chan struct{}
-	readyOnce     sync.Once
-	documents     map[string]string
-	versions      map[string]int
-	files         map[string]string
-	extraRoots    []string
-	syncValid     bool
-	lastSnapshot  string
-	lastProblems  []any
-	lastSync      time.Time
-	watcher       *workspaceWatcher
-	watchHash     string
-	lastScan      time.Time
-	lastCacheHit  bool
-	buildHash     string
-	artifactHash  string
-	artifactStamp string
-	model         *BuildModel
-	modelError    error
-	config        Config
-	settings      map[string]any
-	lastUsed      time.Time
-	failures      int
-	nextStart     time.Time
-	pid           int
-	maxHeapMiB    int
+	root            string
+	gate            chan struct{}
+	rpc             *lsp.Client
+	cmd             *exec.Cmd
+	processDone     chan struct{}
+	processClean    bool
+	mu              sync.Mutex
+	state           string
+	message         string
+	initialError    string
+	ready           chan struct{}
+	readyOnce       sync.Once
+	documents       map[string]string
+	versions        map[string]int
+	files           map[string]string
+	extraRoots      []string
+	syncValid       bool
+	lastSnapshot    string
+	lastProblems    []any
+	lastSyncTimings map[string]int64
+	lastSync        time.Time
+	watcher         *workspaceWatcher
+	watchHash       string
+	lastScan        time.Time
+	lastCacheHit    bool
+	buildHash       string
+	artifactHash    string
+	artifactStamp   string
+	model           *BuildModel
+	modelError      error
+	config          Config
+	settings        map[string]any
+	lastUsed        time.Time
+	failures        int
+	nextStart       time.Time
+	pid             int
+	maxHeapMiB      int
+	workspaceDir    string
+	resumed         bool
 }
 
 func newSession(root string) *Session {
@@ -237,6 +241,8 @@ func (s *Session) start(ctx context.Context) error {
 	if e = os.MkdirAll(dir, 0700); e != nil {
 		return e
 	}
+	s.workspaceDir = dir
+	s.restoreCheckpoint()
 	log, e := os.OpenFile(filepath.Join(dir, "stderr.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if e != nil {
 		return e
@@ -289,6 +295,7 @@ func (s *Session) start(ctx context.Context) error {
 	s.readyOnce = sync.Once{}
 	s.mu.Lock()
 	s.initialError = ""
+	s.processClean = false
 	s.pid = cmd.Process.Pid
 	s.maxHeapMiB = maxHeapMiB
 	s.mu.Unlock()
@@ -296,10 +303,11 @@ func (s *Session) start(ctx context.Context) error {
 	s.rpc = lsp.New(stdout, stdin, s.handler)
 	done := s.processDone
 	go func() {
-		_ = cmd.Wait()
+		err := cmd.Wait()
 		_ = log.Close()
 		s.mu.Lock()
 		s.pid = 0
+		s.processClean = err == nil
 		s.mu.Unlock()
 		close(done)
 	}()
@@ -366,23 +374,61 @@ func merge(dst, src map[string]any) {
 }
 func (s *Session) stop() {
 	s.replaceWatcher(nil)
+	clean := false
 	if s.cmd != nil && s.cmd.Process != nil {
-		_ = syscall.Kill(-s.cmd.Process.Pid, syscall.SIGTERM)
+		// LSP shutdown saves the workspace and index before exit. A signal alone
+		// leaves Eclipse recovering an unclean workspace on every restart.
+		shutdown := make(chan bool, 1)
+		rpc := s.rpc
+		go func() {
+			defer close(shutdown)
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if rpc == nil || rpc.Call(ctx, "shutdown", nil, nil) != nil {
+				shutdown <- false
+				return
+			}
+			shutdown <- rpc.Notify("exit", nil) == nil
+		}()
+		select {
+		case clean = <-shutdown:
+		case <-time.After(5 * time.Second):
+		}
+		if !clean {
+			_ = syscall.Kill(-s.cmd.Process.Pid, syscall.SIGTERM)
+		}
 		select {
 		case <-s.processDone:
 		case <-time.After(3 * time.Second):
+			clean = false
 			_ = syscall.Kill(-s.cmd.Process.Pid, syscall.SIGKILL)
 			<-s.processDone
 		}
 		if s.rpc != nil {
 			<-s.rpc.Done()
 		}
+		// Ensure the shutdown goroutine has stopped before clearing s.rpc.
+		select {
+		case <-shutdown:
+		default:
+			if !clean {
+				<-shutdown
+			}
+		}
+		s.mu.Lock()
+		clean = clean && s.processClean
+		s.mu.Unlock()
+	}
+	if clean && s.syncValid {
+		s.saveCheckpoint()
 	}
 	s.rpc = nil
 	s.cmd = nil
 	s.documents = map[string]string{}
 	s.versions = map[string]int{}
 	s.config = Config{}
+	s.workspaceDir = ""
+	s.resumed = false
 	s.mu.Lock()
 	s.syncValid = false
 	s.lastSnapshot = ""
@@ -577,15 +623,20 @@ func (s *Session) sync(ctx context.Context, files map[string]string) ([]any, err
 		}
 	}
 	var out struct {
-		Problems     []any    `json:"problems"`
-		ProjectRoots []string `json:"projectRoots"`
+		Problems     []any            `json:"problems"`
+		ProjectRoots []string         `json:"projectRoots"`
+		Timings      map[string]int64 `json:"timings"`
 	}
-	if e := s.execute(ctx, "jman.sync", []any{}, &out); e != nil {
+	// A clean restored workspace with unchanged inputs needs a readiness
+	// barrier, not another recursive refresh. Changed/unknown state still uses
+	// the conservative refresh path.
+	if e := s.execute(ctx, "jman.sync", []any{map[string]any{"refresh": !s.resumed || len(changes) > 0}}, &out); e != nil {
 		return nil, e
 	}
 	s.files = files
 	s.extraRoots = out.ProjectRoots
 	s.lastProblems = out.Problems
+	s.lastSyncTimings = out.Timings
 	s.setState("ready", "")
 	if len(out.Problems) > 0 {
 		s.setState("degraded", fmt.Sprintf("%d project errors", len(out.Problems)))

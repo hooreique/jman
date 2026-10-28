@@ -125,6 +125,7 @@
                 export HOME=$TMPDIR/home
                 mkdir -p "$HOME"
                 python3 ${self}/tests/integration.py ${packages.jman}/bin/jman
+                python3 ${self}/tests/restart_test.py ${packages.jman}/bin/jman
                 touch $out
               '';
         }

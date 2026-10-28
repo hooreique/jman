@@ -111,6 +111,77 @@ func TestQueryRetainsChangesAfterDebounceTimeout(t *testing.T) {
 	}
 }
 
+func TestResumedSyncSendsOnlyActualChanges(t *testing.T) {
+	for _, changed := range []bool{false, true} {
+		t.Run(fmt.Sprint(changed), func(t *testing.T) {
+			s := newSession(t.TempDir())
+			s.resumed = true
+			s.files = map[string]string{"same.java": "same", "modified.java": "old", "deleted.java": "old"}
+			files := map[string]string{"same.java": "same", "modified.java": "old", "deleted.java": "old"}
+			if changed {
+				files = map[string]string{"same.java": "same", "modified.java": "new", "created.java": "new"}
+			}
+			a, b := net.Pipe()
+			s.rpc = lsp.New(a, a, nil)
+			messages := make(chan map[string]any, 2)
+			go func() {
+				defer close(messages)
+				r := bufio.NewReader(b)
+				for {
+					header, err := r.ReadString('\n')
+					if err != nil {
+						return
+					}
+					n, _ := strconv.Atoi(strings.TrimSpace(strings.TrimPrefix(header, "Content-Length:")))
+					_, _ = r.ReadString('\n')
+					body := make([]byte, n)
+					if _, err := io.ReadFull(r, body); err != nil {
+						return
+					}
+					var q map[string]any
+					_ = json.Unmarshal(body, &q)
+					messages <- q
+					if id, ok := q["id"]; ok {
+						data, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "id": id, "result": map[string]any{}})
+						_, _ = fmt.Fprintf(b, "Content-Length: %d\r\n\r\n%s", len(data), data)
+						return
+					}
+				}
+			}()
+			defer a.Close()
+			defer b.Close()
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			if _, err := s.sync(ctx, files); err != nil {
+				t.Fatal(err)
+			}
+			var notifications int
+			for q := range messages {
+				params := q["params"].(map[string]any)
+				if q["method"] == "workspace/didChangeWatchedFiles" {
+					notifications++
+					changes := params["changes"].([]any)
+					kinds := map[int]int{}
+					for _, change := range changes {
+						kinds[int(change.(map[string]any)["type"].(float64))]++
+					}
+					if len(changes) != 3 || kinds[1] != 1 || kinds[2] != 1 || kinds[3] != 1 {
+						t.Fatalf("wrong delta: %v", changes)
+					}
+				} else {
+					options := params["arguments"].([]any)[0].(map[string]any)
+					if options["refresh"] != changed {
+						t.Fatalf("wrong refresh policy: %v", options)
+					}
+				}
+			}
+			if (notifications > 0) != changed {
+				t.Fatalf("unexpected notifications: %d", notifications)
+			}
+		})
+	}
+}
+
 func TestQueryRetriesFailedSyncAndPostSyncScan(t *testing.T) {
 	for _, stage := range []string{"sync", "post-scan"} {
 		t.Run(stage, func(t *testing.T) {

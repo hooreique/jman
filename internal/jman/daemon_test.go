@@ -101,3 +101,23 @@ func TestSessionLimitProtectsBusyWorkspace(t *testing.T) {
 		t.Fatalf("idle LRU not evicted: %v", m.sessions)
 	}
 }
+
+func TestStopSessionsWaitsForBusySessionAndRejectsNewWork(t *testing.T) {
+	m := &manager{sessions: map[string]*Session{}, max: 1}
+	s, err := m.acquire(context.Background(), "busy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+	if err := m.stopSessions(ctx); err == nil {
+		t.Fatal("stop did not wait for busy session")
+	}
+	s.release()
+	if err := m.stopSessions(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.acquire(context.Background(), "new"); err == nil {
+		t.Fatal("stopping daemon accepted new work")
+	}
+}

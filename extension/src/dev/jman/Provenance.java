@@ -18,15 +18,24 @@ public final class Provenance implements IDelegateCommandHandler {
     public Object executeCommand(String command, List<Object> args, IProgressMonitor monitor) throws Exception {
         JobHelpers.waitForJobs(BaseDocumentLifeCycleHandler.DOCUMENT_LIFE_CYCLE_JOBS, monitor);
         if (command.equals("jman.sync")) {
-            ResourcesPlugin.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, monitor);
+            Map<String,Long> timings = new LinkedHashMap<>();
+            long started = System.nanoTime();
+            boolean refresh = args.isEmpty() || !(args.get(0) instanceof Map<?,?> options)
+                || !Boolean.FALSE.equals(options.get("refresh"));
+            if (refresh) ResourcesPlugin.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, monitor);
+            timings.put("workspaceRefresh", (System.nanoTime() - started) / 1_000_000);
+            started = System.nanoTime();
             JobHelpers.waitForWorkspaceJobsToComplete(monitor);
             Job.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_BUILD, monitor);
             Job.getJobManager().join(ResourcesPlugin.FAMILY_MANUAL_BUILD, monitor);
+            timings.put("buildWait", (System.nanoTime() - started) / 1_000_000);
+            started = System.nanoTime();
             // A deliberately nonexistent package avoids materializing the entire type index.
             new SearchEngine().searchAllTypeNames("__jman_index_barrier__".toCharArray(), SearchPattern.R_EXACT_MATCH,
                 null, SearchPattern.R_PATTERN_MATCH, IJavaSearchConstants.TYPE,
                 SearchEngine.createWorkspaceScope(), new TypeNameRequestor() {},
                 IJavaSearchConstants.WAIT_UNTIL_READY_TO_SEARCH, monitor);
+            timings.put("indexWait", (System.nanoTime() - started) / 1_000_000);
             List<Map<String,Object>> problems = new ArrayList<>();
             for (IMarker marker : ResourcesPlugin.getWorkspace().getRoot().findMarkers(IMarker.PROBLEM, true, IResource.DEPTH_INFINITE)) {
                 if (marker.getAttribute(IMarker.SEVERITY, 0) == IMarker.SEVERITY_ERROR && problems.size() < 100) {
@@ -40,7 +49,7 @@ public final class Provenance implements IDelegateCommandHandler {
                 IPath path = ProjectUtils.getProjectRealFolder(project);
                 if (path != null && !path.toString().contains("/.metadata/") && !project.getName().equals("jdt.ls-java-project")) roots.add(path.toOSString());
             }
-            return Map.of("problems", problems, "projectRoots", roots);
+            return Map.of("problems", problems, "projectRoots", roots, "timings", timings);
         }
         String uri = (String) args.get(0);
         int line = ((Number) args.get(1)).intValue();

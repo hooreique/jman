@@ -22,11 +22,16 @@ type manager struct {
 	max         int
 	queue       chan struct{}
 	idleTimeout time.Duration
+	stopping    bool
 }
 
 func (m *manager) acquire(ctx context.Context, root string) (*Session, error) {
 	for {
 		m.mu.Lock()
+		if m.stopping {
+			m.mu.Unlock()
+			return nil, fmt.Errorf("daemon is stopping")
+		}
 		s := m.sessions[root]
 		if s == nil && len(m.sessions) >= m.max {
 			var oldest *Session
@@ -96,11 +101,15 @@ func (m *manager) serve(w http.ResponseWriter, req *http.Request) {
 	}
 	var response Response
 	if q.Command == "stop" {
-		response = reply(q)
-		response.Results = append(response.Results, Result{Name: "daemon stopping"})
-		defer func() {
-			go func() { time.Sleep(100 * time.Millisecond); _ = syscall.Kill(os.Getpid(), syscall.SIGTERM) }()
-		}()
+		if err := m.stopSessions(ctx); err != nil {
+			response = failure(q, "not-ready", "STOP_TIMEOUT", err, "retry jman stop")
+		} else {
+			response = reply(q)
+			response.Results = append(response.Results, Result{Name: "daemon stopping"})
+			defer func() {
+				go func() { time.Sleep(100 * time.Millisecond); _ = syscall.Kill(os.Getpid(), syscall.SIGTERM) }()
+			}()
+		}
 	} else if q.Command == "status" {
 		response = reply(q)
 		response.Context = map[string]any{"daemonPid": os.Getpid(), "maxSessions": m.max, "idleTimeout": m.idleTimeout.String()}
@@ -209,6 +218,27 @@ func (m *manager) evictIdle(now time.Time) {
 		}
 	}
 }
+
+func (m *manager) stopSessions(ctx context.Context) error {
+	m.mu.Lock()
+	m.stopping = true
+	sessions := make([]*Session, 0, len(m.sessions))
+	for _, s := range m.sessions {
+		sessions = append(sessions, s)
+	}
+	m.mu.Unlock()
+	for _, s := range sessions {
+		if err := s.acquire(ctx); err != nil {
+			m.mu.Lock()
+			m.stopping = false
+			m.mu.Unlock()
+			return err
+		}
+		s.stop()
+		s.release()
+	}
+	return nil
+}
 func Client(ctx context.Context, q Request) (Response, error) {
 	socket := SocketPath()
 	transport := &http.Transport{DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
@@ -294,5 +324,33 @@ func Client(ctx context.Context, q Request) (Response, error) {
 	}
 	var response Response
 	e = json.NewDecoder(res.Body).Decode(&response)
+	if e == nil && q.Command == "stop" && response.Status == "ok" {
+		// The response is sent before the server can close its socket. Wait for
+		// the daemon lock to be released so `stop; prepare` cannot reach the old
+		// daemon while it is still shutting down.
+		e = waitForDaemonStop(ctx, socket)
+	}
 	return response, e
+}
+
+func waitForDaemonStop(ctx context.Context, socket string) error {
+	lock, err := os.OpenFile(socket+".lock", os.O_RDWR, 0600)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	defer lock.Close()
+	for {
+		if err := syscall.Flock(int(lock.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err == nil {
+			_ = syscall.Flock(int(lock.Fd()), syscall.LOCK_UN)
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(25 * time.Millisecond):
+		}
+	}
 }

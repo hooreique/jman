@@ -56,7 +56,7 @@ Location alone is insufficient for provenance. The caller binding and selected c
 
 Resolution proceeds from selected JDT element to binary, attached source, verified mapping, then decompiled source or signature. A source attachment is not automatically proof that it was built with the selected binary.
 
-External source is written to a read-only content-addressed cache. Workspace indexes remain session-local. Gradle handles private repository credentials; jman does not create another credential store or write credentials to reports.
+External source is written to a read-only content-addressed cache. JDTLS workspace indexes persist on disk and can be resumed after clean shutdown. Gradle handles private repository credentials; jman does not create another credential store or write credentials to reports.
 
 ## Lifecycle and recovery
 
@@ -65,6 +65,20 @@ Sessions move through `starting`, `importing`, `indexing`, `ready`, `degraded`, 
 The daemon uses bounded queues, request deadlines, cancellation, idle eviction, and restart backoff. Queries may run concurrently where safe; import, refresh, and model replacement are serialized. A cancelled request must not cancel shared import work needed by another request.
 
 `status` is a compact summary. `doctor --json` exposes JDK, Gradle, Lombok, processor, and classpath diagnostics.
+
+Session shutdown requests LSP `shutdown`, then `exit`, before falling back to
+signals on timeout. A successful synchronization followed by clean JVM exit
+publishes an atomic workspace checkpoint containing the file content snapshot
+and discovered roots. The checkpoint is consumed before the next JVM launch;
+failed imports, crashes, incompatible workspace identities, and malformed or
+missing checkpoints cannot enable the resume shortcut.
+
+Resume still exports the current Gradle model, validates artifacts, scans current
+files, and waits for JDTLS import/build/index readiness. Only actual file changes
+are notified. An unchanged clean checkpoint avoids the additional recursive
+workspace refresh; changed files use the conservative refresh and JDT's existing
+incremental build. `refresh` always bypasses the shortcut. No cached navigation
+response or prior `syncValid` flag is trusted without synchronizing the new JVM.
 
 ## Packaging
 

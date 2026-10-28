@@ -41,6 +41,21 @@ Home Manager exposes `services.jman.maxSessions` and `services.jman.idleTimeout`
 Automatic startup uses the defaults; restart the daemon to change startup
 options. A project heap change takes effect on its next query or `refresh`.
 
+Idle eviction, session replacement, and `stop` use normal LSP shutdown to preserve
+JDTLS's disk workspace. `stop` waits for session shutdown and daemon lock release,
+so the next command can safely start a new daemon. After a clean stop, unchanged
+files reuse the saved content snapshot without replaying every file as created.
+The next query still validates current inputs and waits for build/index readiness;
+it does not require a preparatory `prepare` command. `prepare --json` exposes
+`context.resumed` when a compatible clean checkpoint was restored. Missing or
+unclean state takes the conservative synchronization path.
+
+`--timings --json` includes `total` (including session retries), `modelLoad`,
+`artifactValidation`, `serverStart`, `resumeScan` when applicable, and `sync`.
+`workspaceRefresh`, `buildWait`, and `indexWait` break down work inside the sync
+extension and are nested within `sync`, not additional elapsed time. JDTLS can
+also wait for the index before invoking the extension.
+
 `status --json` reports `context.daemonPid`, `context.maxSessions`, and
 `context.idleTimeout`; session `detail` contains `pid` (zero without a running
 JVM) and the effective `jdtlsMaxHeapMiB`.

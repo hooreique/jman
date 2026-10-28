@@ -45,7 +45,15 @@ type provenance struct {
 }
 
 func (s *Session) Query(ctx context.Context, q Request) Response {
-	return s.query(ctx, q, 0)
+	started := time.Now()
+	r := s.query(ctx, q, 0)
+	if q.Timings {
+		if r.Timings == nil {
+			r.Timings = map[string]int64{}
+		}
+		r.Timings["total"] = time.Since(started).Milliseconds()
+	}
+	return r
 }
 
 func (s *Session) query(ctx context.Context, q Request, retries int) Response {
@@ -130,13 +138,16 @@ func (s *Session) query(ctx context.Context, q Request, retries int) Response {
 	}
 	modelReloaded := false
 	if s.buildHash == "" {
+		modelStarted := time.Now()
 		s.model, s.modelError = loadModel(ctx, s.root)
+		mark("modelLoad", modelStarted)
 		if ctx.Err() != nil {
 			return failure(q, "not-ready", "MODEL_TIMEOUT", ctx.Err(), "retry the query")
 		}
 		s.buildHash = build
 		modelReloaded = true
 	}
+	artifactStarted := time.Now()
 	modelHash := s.artifactHash
 	artifactStamp, stampErr := artifactFingerprint(s.model)
 	if stampErr != nil {
@@ -153,9 +164,12 @@ func (s *Session) query(ctx context.Context, q Request, retries int) Response {
 		s.artifactHash = modelHash
 		s.artifactStamp = artifactStamp
 	}
+	mark("artifactValidation", artifactStarted)
+	startStarted := time.Now()
 	if e = s.start(ctx); e != nil {
 		return failure(q, "not-ready", "START_FAILED", e, "jman doctor --project "+s.root)
 	}
+	mark("serverStart", startStarted)
 	select {
 	case <-s.ready:
 	case <-ctx.Done():
@@ -169,6 +183,30 @@ func (s *Session) query(ctx context.Context, q Request, retries int) Response {
 	if initError != "" {
 		return failure(q, "not-ready", "IMPORT_FAILED", fmt.Errorf("%s", initError), "jman refresh")
 	}
+	if s.resumed && !s.syncValid {
+		// Restored composite roots were unavailable to the initial scan. Include
+		// them before computing a delta so they are not falsely reported deleted.
+		resumeStarted := time.Now()
+		files, snapshot, build, e = s.scan()
+		mark("resumeScan", resumeStarted)
+		if e != nil {
+			return failure(q, "error", "SCAN_FAILED", e, "")
+		}
+		if build != s.buildHash {
+			s.stop()
+			s.buildHash = ""
+			if retries >= 2 {
+				return failure(q, "not-ready", "WORKSPACE_CHANGED", fmt.Errorf("build inputs changed during resume"), "retry after the build settles")
+			}
+			cacheCommitted = true
+			return s.query(ctx, q, retries+1)
+		}
+		changed = filesChanged(s.files, files)
+	}
+	if q.Command == "refresh" {
+		// An explicit refresh must not take the unchanged-checkpoint shortcut.
+		s.resumed = false
+	}
 	needsSync := q.Command == "refresh" || !s.syncValid || changed
 	s.mu.Lock()
 	s.lastCacheHit = !needsSync
@@ -181,12 +219,17 @@ func (s *Session) query(ctx context.Context, q Request, retries int) Response {
 		syncStarted := time.Now()
 		problems, e = s.sync(ctx, files)
 		mark("sync", syncStarted)
+		for name, elapsed := range s.lastSyncTimings {
+			timings[name] = elapsed
+		}
 		if e != nil {
 			return failure(q, "not-ready", "SYNC_FAILED", e, "jman doctor")
 		}
 		// Watch discovered roots before scanning them, so changes during the scan
 		// remain pending instead of disappearing in the watcher replacement gap.
+		watcherStarted := time.Now()
 		s.startWatcher()
+		mark("watcherUpdate", watcherStarted)
 		// Import can discover additional composite-build roots and generated sources.
 		postSyncScanStarted := time.Now()
 		postFiles, postSnapshot, postBuild, scanErr := s.scan()
@@ -242,7 +285,7 @@ func (s *Session) query(ctx context.Context, q Request, retries int) Response {
 	}
 	cacheCommitted = true
 	r.Snapshot = digest([]byte(snapshot + modelHash))
-	r.Context = map[string]any{"root": s.root, "semantics": "compile-time"}
+	r.Context = map[string]any{"root": s.root, "semantics": "compile-time", "resumed": s.resumed}
 	r.Coverage = map[string]any{"scope": "imported-workspace", "root": s.root, "complete": len(problems) == 0 && s.modelError == nil, "projectErrors": problems, "dynamicReferences": false}
 	if s.modelError != nil {
 		r.Warnings = append(r.Warnings, s.modelError.Error())
